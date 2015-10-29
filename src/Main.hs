@@ -41,7 +41,7 @@ mode = return "normal"
 loadFile :: FilePath -> Eden ()
 loadFile f = do
     result <- liftIO $ Y.readFile f
-    put . Buffer f (0, 0) . fst . (!! 0) . rights $ return result
+    put . Buffer f (0, 0) . fst . head . rights $ return result
 
 commands :: Map String ([String] -> Eden ())
 commands = M.fromList
@@ -55,7 +55,7 @@ prompt = do
         putStr "> "
         getLine
     let parsed = words result
-    commands M.! (parsed !! 0) $ tail parsed
+    commands M.! head parsed $ tail parsed
 
 main :: IO ()
 main = putStrLn . show . bContent =<< runEden emptyBuffer prompt
