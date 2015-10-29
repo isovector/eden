@@ -6,6 +6,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.RWS
 import Data.Either (rights)
+import Data.List (intercalate)
 import Data.Map (Map)
 import qualified Data.Map as M
 import qualified Yi.Rope as Y
@@ -48,7 +49,7 @@ loadFile f = do
 
 commands :: Map String ([String] -> Eden ())
 commands = M.fromList
-    [ (":e", \xs -> loadFile $ head xs)
+    [ (":e", loadFile . intercalate " ")
     ]
 
 prompt :: Eden ()
