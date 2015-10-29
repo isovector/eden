@@ -5,10 +5,11 @@ module Main where
 import Control.Applicative
 import Control.Monad
 import Control.Monad.RWS
-import Data.Map (Map)
 import Data.Either (rights)
+import Data.Map (Map)
 import qualified Data.Map as M
 import qualified Yi.Rope as Y
+import System.IO
 
 type Pos = (Int, Int)
 
@@ -41,22 +42,25 @@ mode = return "normal"
 loadFile :: FilePath -> Eden ()
 loadFile f = do
     result <- liftIO $ Y.readFile f
-    put . Buffer f (0, 0) . fst . head . rights $ return result
+    put . Buffer f (0, 0) $ case result of
+        Right (text, _) -> text
+        Left _          -> error "bad file"
 
 commands :: Map String ([String] -> Eden ())
 commands = M.fromList
-    [ (":e", \xs -> loadFile (xs !! 0))
+    [ (":e", \xs -> loadFile $ head xs)
     ]
 
 prompt :: Eden ()
 prompt = do
+    liftIO $ hSetBuffering stdout NoBuffering
     result <- liftIO $ do
         putStr =<< mode
         putStr "> "
         getLine
-    let parsed = words result
-    commands M.! head parsed $ tail parsed
+    liftM2 (commands M.!) head tail $ words result
+
 
 main :: IO ()
-main = putStrLn . show . bContent =<< runEden emptyBuffer prompt
+main = putStrLn . Y.toString . bContent =<< runEden emptyBuffer prompt
 
