@@ -1,10 +1,15 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, TemplateHaskell,
+             FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 module Main where
 
 import Control.Applicative
 import Control.Monad
 import Control.Monad.RWS
+import Control.Lens
+import Control.Lens.TH
+import Control.Lens.Zoom
+import Control.Lens.Internal.Zoom (Zoomed, FocusingWith)
 import Data.Either (rights)
 import Data.List (intercalate)
 import Data.Map (Map)
@@ -16,43 +21,60 @@ type Pos = (Int, Int)
 
 data Buffer =
     Buffer
-    { bFilename :: FilePath
-    , bCursor   :: Pos
-    , bContent  :: Y.YiString
+    { _bFilename :: FilePath
+    , _bCursor   :: Pos
+    , _bContent  :: Y.YiString
     }
+makeLenses ''Buffer
+emptyBuffer = Buffer "[No Name]" (0,0) (Y.fromString "")
 
-emptyBuffer = Buffer "<unknown>" (0,0) (Y.fromString "")
+data World =
+    World
+    { _wBuffers :: [Buffer]
+    , _wMode    :: String
+    }
+makeLenses ''World
+emptyWorld = World [] "normal"
 
-newtype Eden a =
-    Eden { runEden' :: RWST () () Buffer IO a }
+newtype Eden s a =
+    Eden { runEden' :: RWST () () s IO a }
     deriving ( Functor
              , Applicative
              , Monad
              , MonadReader ()
              , MonadWriter ()
-             , MonadState Buffer
+             , MonadState s
+             , MonadRWS () () s
              , MonadIO
              )
 
-runEden :: Buffer -> Eden a -> IO Buffer
-runEden st e = fst <$> execRWST (runEden' e) () st
+type instance Zoomed (Eden s) = FocusingWith () IO
+instance Zoom (Eden s) (Eden t) s t where
+    zoom l m = Eden (zoom l (runEden' m))
+
+execEden :: s -> Eden s a -> IO (s, a)
+execEden st e = (\(a, s, w) -> (s, a)) <$> runRWST (runEden' e) () st
 
 mode :: IO String
 mode = return "normal"
 
-loadFile :: FilePath -> Eden ()
+loadFile :: FilePath -> Eden [Buffer] ()
 loadFile f = do
     result <- liftIO $ Y.readFile f
-    put . Buffer f (0, 0) $ case result of
+    buffers <- get
+    put . (: buffers) . Buffer f (0, 0) $ case result of
         Right (text, _) -> text
         Left _          -> error "bad file"
 
-commands :: Map String ([String] -> Eden ())
+withBuffers :: Eden [Buffer] a -> Eden World a
+withBuffers = zoom wBuffers
+
+commands :: Map String ([String] -> Eden World ())
 commands = M.fromList
-    [ (":e", loadFile . intercalate " ")
+    [ (":e", withBuffers . loadFile . intercalate " ")
     ]
 
-prompt :: Eden ()
+prompt :: Eden World ()
 prompt = do
     liftIO $ hSetBuffering stdout NoBuffering
     result <- liftIO $ do
@@ -61,7 +83,9 @@ prompt = do
         getLine
     liftM2 (commands M.!) head tail $ words result
 
-
 main :: IO ()
-main = putStrLn . Y.toString . bContent =<< runEden emptyBuffer prompt
+main = putStrLn -- . Y.toString
+                . show
+                . length
+                . _wBuffers =<< fst <$> execEden emptyWorld prompt
 
