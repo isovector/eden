@@ -69,24 +69,26 @@ loadFile f = do
 withBuffers :: Eden [Buffer] a -> Eden World a
 withBuffers = zoom wBuffers
 
-commands :: Map String ([String] -> Eden World() -> Eden World ())
+commands :: Map String ([String] -> Eden World ())
 commands = M.fromList
-    [ (":e", const . withBuffers . loadFile . intercalate " ")
-    , ("", const id)
+    [ (":e", withBuffers . loadFile . intercalate " ")
+    , (":",  const $ return ())
     ]
 
-prompt :: Eden World () -> Eden World ()
-prompt s = do
+prompt :: Eden World ()
+prompt = do
+    world  <- get
     result <- liftIO $ do
-        hSetBuffering stdout NoBuffering
         putStr =<< mode
+        putStr " "
+        putStr . show . length $ _wBuffers world
         putStr "> "
         getLine
-    (liftM2 (commands M.!) head tail $ words result) s
+    liftM2 (commands M.!) head tail $ words result
 
 main :: IO ()
-main = putStrLn -- . Y.toString
-                . show
-                . length
-                . _wBuffers =<< fst <$> execEden emptyWorld (prompt $ return ())
+main = do
+    hSetBuffering stdout NoBuffering
+    (s, _) <- execEden emptyWorld $ forever prompt
+    seq s $ return ()
 
