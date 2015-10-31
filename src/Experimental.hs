@@ -1,58 +1,54 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TemplateHaskell,
              FlexibleInstances, MultiParamTypeClasses, TypeFamilies,
-             DeriveFunctor #-}
-module Experimental where
+             DeriveFunctor, RankNTypes, ImpredicativeTypes #-}
 
+module Ratchet
+    ( ratchet
+    , runRatchet
+    , tighten
+    ) where
+
+import Control.Applicative (Applicative(..))
+import Control.Monad (ap)
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Lens
 import Control.Lens.TH
-import Control.Lens.Zoom
-import Control.Lens.Internal.Zoom (Zoomed, Focusing)
 
-type RLens f r s = (r -> f r) -> s -> f s
+type RLens r s = Lens s s r r
 
-newtype Restriction f s r a =
-    Restriction
-    { runRestriction :: RLens f r s -> s -> (a, s, RLens f r s) }
+newtype Ratchet s r a =
+    Ratchet
+    { runRatchet' :: RLens r s -> s -> (a, s, RLens r s) }
     deriving (Functor)
 
-restriction :: (RLens f r s -> s -> (a, s, RLens f r s)) -> Restriction f s r a
-restriction = Restriction
+ratchet :: (RLens r s -> s -> (a, s, RLens r s)) -> Ratchet s r a
+ratchet = Ratchet
 
-instance (Functor f) => Monad (Restriction f s r) where
-    return x = restriction $ \l s -> (x, s, l)
-    ac >>= k = restriction $ \l s ->
-        let (x, st', l') = runRestriction ac l s
-         in runRestriction (k x) l' st'
+runRatchet :: Ratchet s s a -> s -> (a, s)
+runRatchet m = (\(a, s, l) -> (a, s)) . runRatchet' m id
 
-instance (Functor f) => MonadReader s (Restriction f s r) where
-    ask = restriction $ \l s -> (s, s, l)
+instance Applicative (Ratchet s r) where
+    pure x = ratchet $ \l s -> (x, s, l)
+    (<*>) = ap
+
+instance Monad (Ratchet s r) where
+    return = pure
+    ac >>= k = ratchet $ \l s ->
+        let (x, st', l') = runRatchet' ac l s
+         in runRatchet' (k x) l' st'
+
+instance MonadReader s (Ratchet s r) where
+    ask = ratchet $ \l s -> (s, s, l)
     local = error "fuck"
 
-instance (Functor f) => MonadState r (Restriction f s r) where
-    get = restriction $ \l s -> (view l s, s, l)
-    put v = restriction $ \l s -> ((), set l v s, l)
+instance MonadState r (Ratchet s r) where
+    get = ratchet $ \l s -> (view l s, s, l)
+    put v = ratchet $ \l s -> ((), set l v s, l)
     state = error "fuck"
 
-type Pos = (Int, Int)
-
-data Buffer =
-    Buffer
-    { _bFilename :: FilePath
-    , _bCursor   :: Pos
-    , _bContent  :: String
-    }
-makeLenses ''Buffer
-emptyBuffer = Buffer "[No Name]" (0,0) ""
-
-data World =
-    World
-    { _wMode   :: String
-    , _wBuffer :: Buffer
-    }
-makeLenses ''World
-emptyWorld = World "normal" emptyBuffer
-
-
+tighten :: RLens r' r -> Ratchet s r' a -> Ratchet s r a
+tighten l' m = ratchet $ \l s ->
+    let (a, s', _) = runRatchet' m (l . l') s
+     in (a, s', l)
 
