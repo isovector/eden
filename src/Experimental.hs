@@ -4,47 +4,60 @@
 
 module Ratchet
     ( Ratchet ()
-    , runRatchet
+    , RatchetT ()
+    , runRatchetT
     , tighten
     ) where
 
 import Control.Applicative (Applicative(..))
-import Control.Monad (ap)
+import Control.Monad (ap, liftM2)
 import Control.Monad.Reader
 import Control.Monad.State
+import Control.Monad.Trans
 import Control.Lens
 
 type RLens r s = Lens s s r r
 
-newtype Ratchet s r a =
-    Ratchet
-    { runRatchet' :: RLens r s -> s -> (a, s, RLens r s) }
+newtype RatchetT s r m a =
+    RatchetT
+    { runRatchetT' :: RLens r s -> s -> m (a, s, RLens r s) }
     deriving (Functor)
 
-instance Applicative (Ratchet s r) where
-    pure x = Ratchet $ \l s -> (x, s, l)
+instance (Applicative m, Monad m) => Applicative (RatchetT s r m) where
+    pure x = RatchetT $ \l s -> pure (x, s, l)
     (<*>) = ap
 
-instance Monad (Ratchet s r) where
+instance (Applicative m, Monad m) => Monad (RatchetT s r m) where
     return = pure
-    ac >>= k = Ratchet $ \l s ->
-        let (x, st', l') = runRatchet' ac l s
-         in runRatchet' (k x) l' st'
+    ac >>= k = RatchetT $ \l s -> do
+        (x, st', l') <- runRatchetT' ac l s
+        runRatchetT' (k x) l' st'
 
-instance MonadReader s (Ratchet s r) where
-    ask = Ratchet $ \l s -> (s, s, l)
+instance (Applicative m, Monad m) => MonadReader s (RatchetT s r m) where
+    ask = RatchetT $ \l s -> return (s, s, l)
     local = error "fuck"
 
-instance MonadState r (Ratchet s r) where
-    get = Ratchet $ \l s -> (view l s, s, l)
-    put v = Ratchet $ \l s -> ((), set l v s, l)
+instance (Applicative m, Monad m) => MonadState r (RatchetT s r m) where
+    get = RatchetT $ \l s -> return (view l s, s, l)
+    put v = RatchetT $ \l s -> return ((), set l v s, l)
     state = error "fuck"
 
-runRatchet :: Ratchet s s a -> s -> (a, s)
-runRatchet m = (\(a, s, l) -> (a, s)) . runRatchet' m id
+instance MonadTrans (RatchetT s r) where
+    lift x = RatchetT $ \l s -> x >>= (\a -> return (a, s, l))
 
-tighten :: RLens r' r -> Ratchet s r' a -> Ratchet s r a
-tighten l' m = Ratchet $ \l s ->
-    let (a, s', _) = runRatchet' m (l . l') s
-     in (a, s', l)
+instance (Applicative m, MonadIO m) => MonadIO (RatchetT s r m) where
+    liftIO = lift . liftIO
+
+runRatchetT :: (Functor m) => RatchetT s s m a -> s -> m (a, s)
+runRatchetT ac = fmap (\(a, s, l) -> (a, s)) . runRatchetT' ac id
+
+type Ratchet s r = RatchetT s r Identity
+
+runRatchet :: Ratchet s s a -> s -> (a, s)
+runRatchet ac = runIdentity . runRatchetT ac
+
+tighten :: (Monad m) => RLens r' r -> RatchetT s r' m a -> RatchetT s r m a
+tighten l' m = RatchetT $ \l s -> do
+    (a, s', _) <- runRatchetT' m (l . l') s
+    return (a, s', l)
 
