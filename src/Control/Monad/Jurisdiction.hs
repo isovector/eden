@@ -2,12 +2,13 @@
              FlexibleInstances, MultiParamTypeClasses, TypeFamilies,
              DeriveFunctor, RankNTypes, ImpredicativeTypes #-}
 
-module Jurisdiction
+module Control.Monad.Jurisdiction
     ( Jurisdiction ()
     , JurisdictionT ()
     , runJurisdiction
     , runJurisdictionT
     , restrict
+    , inquire
     ) where
 
 import Control.Applicative (Applicative(..))
@@ -60,4 +61,7 @@ restrict :: (Monad m) => RLens r' r -> JurisdictionT s r' m a -> JurisdictionT s
 restrict l' m = JurisdictionT $ \l s -> do
     (a, s', _) <- runJurisdictionT' m (l . l') s
     return (a, s', l)
+
+inquire :: (Applicative m, Monad m) => RLens i s -> JurisdictionT s r m i
+inquire l = ask $ view l
 

@@ -5,7 +5,10 @@ module Main where
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.RWS
+import Control.Monad.Jurisdiction
+import Control.Monad.Reader
+import Control.Monad.State
+import Control.Monad.Trans
 import Control.Lens
 import Control.Lens.TH
 import Control.Lens.Zoom
@@ -36,27 +39,18 @@ data World =
 makeLenses ''World
 emptyWorld = World [] "normal"
 
-newtype Eden s a =
-    Eden { runEden' :: RWST () () s IO a }
-    deriving ( Functor
-             , Applicative
-             , Monad
-             , MonadReader ()
-             , MonadWriter ()
-             , MonadState s
-             , MonadRWS () () s
-             , MonadIO
-             )
+-- newtype Eden r a =
+--     Eden { runEden' :: JurisdictionT World r IO a }
+--     deriving ( Functor
+--              , Applicative
+--              , Monad
+--              , MonadReader World
+--              , MonadState r
+--              , MonadIO
+--              )
 
-type instance Zoomed (Eden s) = FocusingWith () IO
-instance Zoom (Eden s) (Eden t) s t where
-    zoom l m = Eden (zoom l (runEden' m))
-
-execEden :: s -> Eden s a -> IO (s, a)
-execEden st e = (\(a, s, w) -> (s, a)) <$> runRWST (runEden' e) () st
-
-mode :: IO String
-mode = return "normal"
+type Eden r a = JurisdictionT World r IO a
+runEden = runJurisdictionT
 
 loadFile :: FilePath -> Eden [Buffer] ()
 loadFile f = do
@@ -67,19 +61,21 @@ loadFile f = do
         Left _          -> error "bad file"
 
 withBuffers :: Eden [Buffer] a -> Eden World a
-withBuffers = zoom wBuffers
+withBuffers = restrict wBuffers
 
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList
     [ (":e", withBuffers . loadFile . intercalate " ")
     , (":",  const $ return ())
+    , (":mode", restrict wMode . put . intercalate " ")
     ]
 
 prompt :: Eden World ()
 prompt = do
     world  <- get
+    mode   <- inquire wMode
     result <- liftIO $ do
-        putStr =<< mode
+        putStr mode
         putStr " "
         putStr . show . length $ _wBuffers world
         putStr "> "
@@ -89,6 +85,6 @@ prompt = do
 main :: IO ()
 main = do
     hSetBuffering stdout NoBuffering
-    (s, _) <- execEden emptyWorld $ forever prompt
+    s <- snd <$> runEden (forever prompt) emptyWorld
     seq s $ return ()
 
