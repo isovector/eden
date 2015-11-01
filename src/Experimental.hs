@@ -2,11 +2,12 @@
              FlexibleInstances, MultiParamTypeClasses, TypeFamilies,
              DeriveFunctor, RankNTypes, ImpredicativeTypes #-}
 
-module Ratchet
-    ( Ratchet ()
-    , RatchetT ()
-    , runRatchetT
-    , tighten
+module Jurisdiction
+    ( Jurisdiction ()
+    , JurisdictionT ()
+    , runJurisdiction
+    , runJurisdictionT
+    , restrict
     ) where
 
 import Control.Applicative (Applicative(..))
@@ -18,46 +19,51 @@ import Control.Lens
 
 type RLens r s = Lens s s r r
 
-newtype RatchetT s r m a =
-    RatchetT
-    { runRatchetT' :: RLens r s -> s -> m (a, s, RLens r s) }
+newtype JurisdictionT s r m a =
+    JurisdictionT
+    { runJurisdictionT' :: RLens r s -> s -> m (a, s, RLens r s) }
     deriving (Functor)
 
-instance (Applicative m, Monad m) => Applicative (RatchetT s r m) where
-    pure x = RatchetT $ \l s -> pure (x, s, l)
+instance (Applicative m, Monad m) => Applicative (JurisdictionT s r m) where
+    pure x = JurisdictionT $ \l s -> pure (x, s, l)
     (<*>) = ap
 
-instance (Applicative m, Monad m) => Monad (RatchetT s r m) where
+instance (Applicative m, Monad m) => Monad (JurisdictionT s r m) where
     return = pure
-    ac >>= k = RatchetT $ \l s -> do
-        (x, st', l') <- runRatchetT' ac l s
-        runRatchetT' (k x) l' st'
+    ac >>= k = JurisdictionT $ \l s -> do
+        (x, st', l') <- runJurisdictionT' ac l s
+        runJurisdictionT' (k x) l' st'
 
-instance (Applicative m, Monad m) => MonadReader s (RatchetT s r m) where
-    ask = RatchetT $ \l s -> return (s, s, l)
+instance (Applicative m, Monad m) => MonadReader s (JurisdictionT s r m) where
+    ask = JurisdictionT $ \l s -> return (s, s, l)
     local = error "fuck"
 
-instance (Applicative m, Monad m) => MonadState r (RatchetT s r m) where
-    get = RatchetT $ \l s -> return (view l s, s, l)
-    put v = RatchetT $ \l s -> return ((), set l v s, l)
+instance (Applicative m, Monad m) => MonadState r (JurisdictionT s r m) where
+    get = JurisdictionT $ \l s -> return (view l s, s, l)
+    put v = JurisdictionT $ \l s -> return ((), set l v s, l)
     state = error "fuck"
 
-instance MonadTrans (RatchetT s r) where
-    lift x = RatchetT $ \l s -> x >>= (\a -> return (a, s, l))
+instance MonadTrans (JurisdictionT s r) where
+    lift x = JurisdictionT $ \l s -> x >>= (\a -> return (a, s, l))
 
-instance (Applicative m, MonadIO m) => MonadIO (RatchetT s r m) where
+instance (Applicative m, MonadIO m) => MonadIO (JurisdictionT s r m) where
     liftIO = lift . liftIO
 
-runRatchetT :: (Functor m) => RatchetT s s m a -> s -> m (a, s)
-runRatchetT ac = fmap (\(a, s, l) -> (a, s)) . runRatchetT' ac id
+runJurisdictionT :: (Functor m) => JurisdictionT s s m a -> s -> m (a, s)
+runJurisdictionT ac = fmap (\(a, s, l) -> (a, s)) . runJurisdictionT' ac id
 
-type Ratchet s r = RatchetT s r Identity
+type Jurisdiction s r = JurisdictionT s r Identity
 
-runRatchet :: Ratchet s s a -> s -> (a, s)
-runRatchet ac = runIdentity . runRatchetT ac
+runJurisdiction :: Jurisdiction s s a -> s -> (a, s)
+runJurisdiction ac = runIdentity . runJurisdictionT ac
 
-tighten :: (Monad m) => RLens r' r -> RatchetT s r' m a -> RatchetT s r m a
-tighten l' m = RatchetT $ \l s -> do
-    (a, s', _) <- runRatchetT' m (l . l') s
+restrict :: (Monad m) => RLens r' r -> JurisdictionT s r' m a -> JurisdictionT s r m a
+restrict l' m = JurisdictionT $ \l s -> do
+    (a, s', _) <- runJurisdictionT' m (l . l') s
     return (a, s', l)
+
+-- restrict
+-- inq|uire
+-- imp|ose
+
 
