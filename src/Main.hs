@@ -71,13 +71,15 @@ withNextBuffer n = do
     proclaims wNextBuffer (+1)
     return result
 
+asWords :: (String -> b) -> ([String] -> b)
+asWords f = f . intercalate " "
 
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList
-    [ (":e", withNextBuffer . loadFile . intercalate " ")
+    [ ("e", asWords $ withNextBuffer . loadFile)
     , (":",  const $ return ())
-    , (":mode", restrict wMode . put . intercalate " ")
-    , (":print",
+    , ("mode", asWords $ restrict wMode . put)
+    , ("p",
         \s -> do
             restrict (wBuffers . at (read $ concat s)) $ do
                 get >>= liftIO . \case
