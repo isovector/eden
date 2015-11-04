@@ -9,6 +9,8 @@ module Control.Monad.Jurisdiction
     , runJurisdictionT
     , restrict
     , inquire
+    , proclaim
+    , proclaims
     ) where
 
 import Control.Applicative (Applicative(..))
@@ -49,19 +51,43 @@ instance MonadTrans (JurisdictionT s r) where
 instance (Applicative m, MonadIO m) => MonadIO (JurisdictionT s r m) where
     liftIO = lift . liftIO
 
-runJurisdictionT :: (Functor m) => JurisdictionT s s m a -> s -> m (a, s)
+runJurisdictionT :: (Functor m)
+                 => JurisdictionT s s m a
+                 -> s
+                 -> m (a, s)
 runJurisdictionT ac = fmap (\(a, s, l) -> (a, s)) . runJurisdictionT' ac id
 
 type Jurisdiction s r = JurisdictionT s r Identity
-
-runJurisdiction :: Jurisdiction s s a -> s -> (a, s)
+runJurisdiction :: Jurisdiction s s a
+                -> s
+                -> (a, s)
 runJurisdiction ac = runIdentity . runJurisdictionT ac
 
-restrict :: (Monad m) => RLens r' r -> JurisdictionT s r' m a -> JurisdictionT s r m a
+restrict :: (Monad m)
+         => RLens r' r
+         -> JurisdictionT s r' m a
+         -> JurisdictionT s r m a
 restrict l' m = JurisdictionT $ \l s -> do
     (a, s', _) <- runJurisdictionT' m (l . l') s
     return (a, s', l)
 
-inquire :: (Applicative m, Monad m) => RLens i s -> JurisdictionT s r m i
+inquire :: (Applicative m, Monad m)
+        => RLens i s
+        -> JurisdictionT s r m i
 inquire l = ask $ view l
 
+proclaim :: (Applicative m, Monad m)
+         => RLens r' r
+         -> r'
+         -> JurisdictionT s r m ()
+proclaim l v = do
+    state <- get
+    put $ set l v state
+
+proclaims :: (Applicative m, Monad m)
+         => RLens r' r
+         -> (r' -> r')
+         -> JurisdictionT s r m ()
+proclaims l f = do
+    state <- get
+    put $ set l (f $ view l state) state

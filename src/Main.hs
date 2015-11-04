@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TemplateHaskell,
-             FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+             FlexibleInstances, MultiParamTypeClasses, TypeFamilies,
+             LambdaCase #-}
 
 module Main where
 
@@ -15,6 +16,8 @@ import Control.Lens.Zoom
 import Control.Lens.Internal.Zoom (Zoomed, FocusingWith)
 import Data.Either (rights)
 import Data.List (intercalate)
+import Data.IntMap (IntMap)
+import qualified Data.IntMap as I
 import Data.Map (Map)
 import qualified Data.Map as M
 import qualified Yi.Rope as Y
@@ -33,11 +36,13 @@ emptyBuffer = Buffer "[No Name]" (0,0) (Y.fromString "")
 
 data World =
     World
-    { _wBuffers :: [Buffer]
+    { _wBuffers :: IntMap Buffer
     , _wMode    :: String
+    , _wCurBuffer :: Int
+    , _wNextBuffer :: Int
     }
 makeLenses ''World
-emptyWorld = World [] "normal"
+emptyWorld = World I.empty "normal" 0 0
 
 -- newtype Eden r a =
 --     Eden { runEden' :: JurisdictionT World r IO a }
@@ -52,22 +57,33 @@ emptyWorld = World [] "normal"
 type Eden r a = JurisdictionT World r IO a
 runEden = runJurisdictionT
 
-loadFile :: FilePath -> Eden [Buffer] ()
+loadFile :: FilePath -> Eden (Maybe Buffer) ()
 loadFile f = do
     result <- liftIO $ Y.readFile f
-    buffers <- get
-    put . (: buffers) . Buffer f (0, 0) $ case result of
+    put . Just . Buffer f (0, 0) $ case result of
         Right (text, _) -> text
         Left _          -> error "bad file"
 
-withBuffers :: Eden [Buffer] a -> Eden World a
-withBuffers = restrict wBuffers
+withNextBuffer :: Eden (Maybe Buffer) a -> Eden World a
+withNextBuffer n = do
+    next   <- inquire wNextBuffer
+    result <- restrict (wBuffers . at next) n
+    proclaims wNextBuffer (+1)
+    return result
+
 
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList
-    [ (":e", withBuffers . loadFile . intercalate " ")
+    [ (":e", withNextBuffer . loadFile . intercalate " ")
     , (":",  const $ return ())
     , (":mode", restrict wMode . put . intercalate " ")
+    , (":print",
+        \s -> do
+            restrict (wBuffers . at (read $ concat s)) $ do
+                get >>= liftIO . \case
+                    Just x  -> putStrLn . Y.toString $ view bContent x
+                    Nothing -> putStrLn "buffer does not exist"
+        )
     ]
 
 prompt :: Eden World ()
@@ -75,16 +91,17 @@ prompt = do
     world  <- get
     mode   <- inquire wMode
     result <- liftIO $ do
+        hFlush stdout
         putStr mode
         putStr " "
-        putStr . show . length $ _wBuffers world
+        putStr . show . I.size $ _wBuffers world
         putStr "> "
+        hFlush stdout
         getLine
     liftM2 (commands M.!) head tail $ words result
 
 main :: IO ()
 main = do
-    hSetBuffering stdout NoBuffering
     s <- snd <$> runEden (forever prompt) emptyWorld
     seq s $ return ()
 
