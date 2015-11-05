@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TemplateHaskell,
              FlexibleInstances, MultiParamTypeClasses, TypeFamilies,
-             DeriveFunctor, RankNTypes, ImpredicativeTypes #-}
+             DeriveFunctor, RankNTypes, ImpredicativeTypes, LambdaCase #-}
 
 module Control.Monad.Jurisdiction
     ( Jurisdiction ()
@@ -11,6 +11,7 @@ module Control.Monad.Jurisdiction
     , inquire
     , proclaim
     , proclaims
+    , proclaimm
     ) where
 
 import Control.Applicative (Applicative(..))
@@ -91,3 +92,12 @@ proclaims :: (Applicative m, Monad m)
 proclaims l f = do
     state <- get
     put $ set l (f $ view l state) state
+
+proclaimm :: (Applicative m, Monad m)
+          => RLens r' r
+          -> (r' -> r')
+          -> JurisdictionT s (Maybe r) m ()
+proclaimm l f = do
+    get >>= \case
+        Just x  -> put . Just $ set l (f $ view l x) x
+        Nothing -> return ()

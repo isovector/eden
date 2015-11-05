@@ -71,6 +71,34 @@ withNextBuffer n = do
     proclaims wNextBuffer (+1)
     return result
 
+withCurBuffer :: Eden (Maybe Buffer) a -> Eden World a
+withCurBuffer n = do
+    current <- inquire wCurBuffer
+    restrict (wBuffers . at current) n
+
+
+
+nnoremap :: Map Char (Eden World ())
+nnoremap = M.fromList
+    [ ('j', withCurBuffer $ proclaimm (bCursor . _2) (+ 1))
+    , ('k', withCurBuffer $ proclaimm (bCursor . _2) (subtract 1))
+    , ('h', withCurBuffer $ proclaimm (bCursor . _1) (subtract 1))
+    , ('l', withCurBuffer $ proclaimm (bCursor . _1) (+ 1))
+    ]
+
+display :: Buffer -> IO ()
+display b = do
+    let clines = Y.lines $ view bContent b
+        cursor = view bCursor b
+        wcursor = map (inject cursor) $ zip [0..] clines
+    forM_ wcursor $ putStrLn . Y.toString
+  where
+      inject (x,y) (cy, line) =
+          if y == cy
+             then let (left,right) = Y.splitAt x line
+                   in Y.concat [left, Y.cons '|' right]
+             else line
+
 asWords :: (String -> b) -> ([String] -> b)
 asWords f = f . intercalate " "
 
@@ -83,7 +111,7 @@ commands = M.fromList
         \s -> do
             restrict (wBuffers . at (read $ concat s)) $ do
                 get >>= liftIO . \case
-                    Just x  -> putStrLn . Y.toString $ view bContent x
+                    Just x  -> liftIO $ display x
                     Nothing -> putStrLn "buffer does not exist"
         )
     ]
