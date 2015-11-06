@@ -76,6 +76,11 @@ withCurBuffer n = do
     current <- inquire wCurBuffer
     restrictInto (wBuffers . at current) n
 
+curBuffer :: Eden a (Maybe Buffer)
+curBuffer = do
+    current <- inquire wCurBuffer
+    inquire (wBuffers . at current)
+
 nnoremap :: Map Char (Eden World ())
 nnoremap = M.fromList
     [ ('j', withCurBuffer $ proclaims (bCursor . _2) (+ 1))
@@ -103,7 +108,6 @@ asWords f = f . intercalate " "
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList
     [ ("e", asWords $ withNextBuffer . loadFile)
-    , (":",  const $ return ())
     , ("mode", asWords $ restrict wMode . put)
     , ("p",
         \s -> do
@@ -114,19 +118,32 @@ commands = M.fromList
         )
     ]
 
+input :: Eden World ()
+input = do
+    result <- liftIO getChar
+    if result == ':'
+       then do
+           line <- liftIO getLine
+           liftM2 (commands M.!) head tail $ words line
+       else nnoremap M.! result
+
+
 prompt :: Eden World ()
 prompt = do
     world  <- get
+    buffer <- maybe emptyBuffer id <$> curBuffer
     mode   <- inquire wMode
-    result <- liftIO $ do
+    liftIO $ do
         hFlush stdout
+        forM_ [1..30] . const $ putStrLn ""
+        display buffer
+        putStrLn ""
         putStr mode
         putStr " "
         putStr . show . I.size $ _wBuffers world
         putStr "> "
         hFlush stdout
-        getLine
-    liftM2 (commands M.!) head tail $ words result
+    input
 
 main :: IO ()
 main = do
