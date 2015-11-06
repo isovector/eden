@@ -8,18 +8,20 @@ module Control.Monad.Jurisdiction
     , runJurisdiction
     , runJurisdictionT
     , restrict
+    , restrictInto
     , inquire
     , proclaim
     , proclaims
     , proclaimm
     ) where
 
-import Control.Applicative (Applicative(..))
+import Control.Applicative (Applicative(..), (<$>))
 import Control.Monad (ap, liftM2)
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Trans
 import Control.Lens
+import Data.Maybe (fromJust)
 
 type RLens r s = Lens s s r r
 
@@ -71,6 +73,18 @@ restrict :: (Monad m)
 restrict l' m = JurisdictionT $ \l s -> do
     (a, s', _) <- runJurisdictionT' m (l . l') s
     return (a, s', l)
+
+into :: RLens a (Maybe a)
+into = lens fromJust (const Just)
+
+restrictInto :: (Applicative m, Monad m)
+             => RLens (Maybe r') r
+             -> JurisdictionT s r' m ()
+             -> JurisdictionT s r m ()
+restrictInto l m =
+    (gets $ view l) >>= \case
+        Just _  -> restrict (l . into) m
+        Nothing -> return ()
 
 inquire :: (Applicative m, Monad m)
         => RLens i s

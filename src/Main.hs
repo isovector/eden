@@ -71,19 +71,17 @@ withNextBuffer n = do
     proclaims wNextBuffer (+1)
     return result
 
-withCurBuffer :: Eden (Maybe Buffer) a -> Eden World a
+withCurBuffer :: Eden Buffer () -> Eden World ()
 withCurBuffer n = do
     current <- inquire wCurBuffer
-    restrict (wBuffers . at current) n
-
-
+    restrictInto (wBuffers . at current) n
 
 nnoremap :: Map Char (Eden World ())
 nnoremap = M.fromList
-    [ ('j', withCurBuffer $ proclaimm (bCursor . _2) (+ 1))
-    , ('k', withCurBuffer $ proclaimm (bCursor . _2) (subtract 1))
-    , ('h', withCurBuffer $ proclaimm (bCursor . _1) (subtract 1))
-    , ('l', withCurBuffer $ proclaimm (bCursor . _1) (+ 1))
+    [ ('j', withCurBuffer $ proclaims (bCursor . _2) (+ 1))
+    , ('k', withCurBuffer $ proclaims (bCursor . _2) (subtract 1))
+    , ('h', withCurBuffer $ proclaims (bCursor . _1) (subtract 1))
+    , ('l', withCurBuffer $ proclaims (bCursor . _1) (+ 1))
     ]
 
 display :: Buffer -> IO ()
