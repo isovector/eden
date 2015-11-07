@@ -21,6 +21,7 @@ import qualified Data.IntMap as I
 import Data.Map (Map)
 import qualified Data.Map as M
 import qualified Yi.Rope as Y
+import System.Console.ANSI
 import System.IO
 
 type Pos = (Int, Int)
@@ -99,8 +100,16 @@ display b = do
       inject (x,y) (cy, line) =
           if y == cy
              then let (left,right) = Y.splitAt x line
-                   in Y.concat [left, Y.cons '|' right]
+                      (char,rest) = Y.splitAt 1 right
+                   in Y.concat [left, highlight char, rest]
              else line
+      highlight char = Y.fromString $ concat
+        [ setSGRCode [ SetColor Foreground Vivid Black
+                    , SetColor Background Vivid White
+                    ]
+          , Y.toString char
+          , setSGRCode [Reset]
+        ]
 
 asWords :: (String -> b) -> ([String] -> b)
 asWords f = f . intercalate " "
