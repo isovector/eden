@@ -19,6 +19,6 @@ executable eden
   main-is:             Main.hs
   -- other-modules:
   -- other-extensions:
-  build-depends:       base >=4.6 && <4.8, yi-rope, containers, mtl, lens, ansi-terminal
+  build-depends:       base >=4.6 && <4.8, yi-rope, containers, mtl, lens, ansi-terminal, concurrent-output
   hs-source-dirs:      src
   default-language:    Haskell2010

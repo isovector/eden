@@ -26,6 +26,8 @@ import System.IO
 
 type Pos = (Int, Int)
 
+data Mode = NORMAL | INSERT deriving (Eq, Show, Read, Ord)
+
 data Buffer =
     Buffer
     { _bFilename :: FilePath
@@ -38,12 +40,12 @@ emptyBuffer = Buffer "[No Name]" (0,0) (Y.fromString "")
 data World =
     World
     { _wBuffers :: IntMap Buffer
-    , _wMode    :: String
+    , _wMode    :: Mode
     , _wCurBuffer :: Int
     , _wNextBuffer :: Int
     }
 makeLenses ''World
-emptyWorld = World I.empty "normal" 0 0
+emptyWorld = World I.empty NORMAL 0 0
 
 -- newtype Eden r a =
 --     Eden { runEden' :: JurisdictionT World r IO a }
@@ -82,12 +84,52 @@ curBuffer = do
     current <- inquire wCurBuffer
     inquire (wBuffers . at current)
 
+modes :: Map Mode (Eden World ())
+modes = M.fromList
+    [ (NORMAL, normalMode)
+    , (INSERT, insertMode)
+    ]
+
+normalMode :: Eden World ()
+normalMode = do
+    result <- liftIO getChar
+    if result == ':'
+       then do
+           line <- liftIO getLine
+           liftM2 (commands M.!) head tail $ words line
+       else nnoremap M.! result
+
+withLines :: ((Int, Y.YiString) -> Y.YiString) -> Y.YiString -> Y.YiString
+withLines f = Y.unlines . map f . zip [0..] . Y.lines
+
+insert :: Pos -> Y.YiString -> Y.YiString -> Y.YiString
+insert (cx, cy) what s = withLines go s
+    where go (y, line) = if y == cy
+                             then yInsert cx what line
+                             else line
+
+yInsert :: Int -> Y.YiString -> Y.YiString -> Y.YiString
+yInsert x what line = let (left,right) = Y.splitAt x line
+                       in Y.concat [left, what, right]
+
+insertMode :: Eden World ()
+insertMode = do
+    char <- liftIO getChar
+    if char == '\x1b'
+        then proclaim wMode NORMAL
+        else withCurBuffer $ do
+                 cursor <- gets $ view bCursor
+                 proclaims bContent $ insert cursor (Y.fromString [char])
+                 proclaims (bCursor . _1) (+ 1)
+
 nnoremap :: Map Char (Eden World ())
 nnoremap = M.fromList
     [ ('j', withCurBuffer $ proclaims (bCursor . _2) (+ 1))
     , ('k', withCurBuffer $ proclaims (bCursor . _2) (subtract 1))
     , ('h', withCurBuffer $ proclaims (bCursor . _1) (subtract 1))
     , ('l', withCurBuffer $ proclaims (bCursor . _1) (+ 1))
+    , ('i', proclaim wMode INSERT)
+    , ('\x1b', proclaim wMode NORMAL)
     ]
 
 display :: Buffer -> IO ()
@@ -117,14 +159,6 @@ asWords f = f . intercalate " "
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList
     [ ("e", asWords $ withNextBuffer . loadFile)
-    , ("mode", asWords $ restrict wMode . put)
-    , ("p",
-        \s -> do
-            restrict (wBuffers . at (read $ concat s)) $ do
-                get >>= liftIO . \case
-                    Just x  -> liftIO $ display x
-                    Nothing -> putStrLn "buffer does not exist"
-        )
     ]
 
 input :: Eden World ()
@@ -147,15 +181,17 @@ prompt = do
         forM_ [1..30] . const $ putStrLn ""
         display buffer
         putStrLn ""
-        putStr mode
+        putStr . show $ mode
         putStr " "
         putStr . show . I.size $ _wBuffers world
         putStr "> "
         hFlush stdout
-    input
+    modes M.! mode
 
 main :: IO ()
 main = do
     s <- snd <$> runEden (forever prompt) emptyWorld
     seq s $ return ()
+
+
 
