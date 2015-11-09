@@ -11,7 +11,7 @@ module Eden.Types ( Pos
                   , bFilename
                   , bCursor
                   , bLines
-                  , curLine
+                  , bCurLine
 
                   , World ()
                   , emptyWorld
@@ -55,6 +55,13 @@ data Buffer =
 makeLenses ''Buffer
 emptyBuffer = Buffer "[No Name]" (0,0) Z.empty
 
+curLine :: RLens a (Zipper a)
+curLine = lens Z.cursor (flip Z.insert . Z.delete)
+
+bCurLine :: RLens Y.YiString Buffer
+bCurLine = bLines . curLine
+
+
 data World =
     World
     { _wBuffers :: IntMap Buffer
@@ -66,7 +73,4 @@ makeLenses ''World
 emptyWorld = World I.empty NORMAL 0 0
 
 type Eden r a = JurisdictionT World r IO a
-
-curLine :: RLens a (Zipper a)
-curLine = lens Z.cursor (flip Z.insert . Z.delete)
 

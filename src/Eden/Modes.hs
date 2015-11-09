@@ -64,7 +64,7 @@ insertMode = do
         then proclaim wMode NORMAL
         else withCurBuffer $ do
                  (x,_) <- gets $ view bCursor
-                 proclaims (bLines . curLine) $ insert x (Y.fromString [char])
+                 proclaims bCurLine $ insert x (Y.fromString [char])
                  proclaims (bCursor . _1) (+ 1)
 
 nnoremap :: Map Char (Eden World ())
