@@ -6,13 +6,15 @@ import Eden.Utils
 
 import Control.Applicative ((<$>))
 import Control.Monad
+import Control.Monad.Loops (untilM_)
+import Data.Map (Map)
 import System.Console.ANSI
 import System.IO
-import Data.Map (Map)
+
 import qualified Data.IntMap      as I
+import qualified Data.List.Zipper as Z
 import qualified Data.Map         as M
 import qualified Yi.Rope          as Y
-import qualified Data.List.Zipper as Z
 
 display :: Buffer -> IO ()
 display b = do

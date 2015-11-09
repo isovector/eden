@@ -10,6 +10,7 @@ module Control.Monad.Jurisdiction
     , restrict
     , restrictInto
     , inquire
+    , inspect
     , proclaim
     , proclaims
     , proclaimm
@@ -23,6 +24,7 @@ import Control.Monad.State
 import Control.Monad.Trans
 import Control.Lens
 import Data.Maybe (fromJust)
+
 
 type RLens r s = Lens s s r r
 
@@ -86,6 +88,11 @@ restrictInto l m =
     (gets $ view l) >>= \case
         Just _  -> restrict (l . into) m
         Nothing -> return ()
+
+inspect :: (Applicative m, Monad m)
+        => RLens i r
+        -> JurisdictionT s r m i
+inspect l = gets $ view l
 
 inquire :: (Applicative m, Monad m)
         => RLens i s

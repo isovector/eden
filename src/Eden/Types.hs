@@ -27,19 +27,20 @@ module Eden.Types ( Pos
                   , get, gets, put
                   ) where
 
+import Control.Lens
+import Control.Lens.TH
 import Control.Monad.Jurisdiction
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Trans
-import Control.Lens
-import Control.Lens.TH
-import Data.List.Zipper (Zipper)
-import qualified Data.List.Zipper as Z
 import Data.IntMap (IntMap)
-import qualified Data.IntMap as I
+import Data.List.Zipper (Zipper)
 import Data.Map (Map)
-import qualified Data.Map as M
-import qualified Yi.Rope as Y
+
+import qualified Data.IntMap      as I
+import qualified Data.List.Zipper as Z
+import qualified Data.Map         as M
+import qualified Yi.Rope          as Y
 
 
 type Pos = (Int, Int)

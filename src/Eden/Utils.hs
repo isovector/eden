@@ -4,8 +4,9 @@ import Eden.Types
 
 import Control.Lens
 import Data.List.Zipper (Zipper)
-import qualified Yi.Rope as Y
+
 import qualified Data.List.Zipper as Z
+import qualified Yi.Rope          as Y
 
 
 withNextBuffer :: Eden (Maybe Buffer) a -> Eden World a
