@@ -25,13 +25,6 @@ curBuffer = do
     current <- inquire wCurBuffer
     inquire (wBuffers . at current)
 
-withLines :: ((Int, Y.YiString) -> Y.YiString) -> Y.YiString -> Y.YiString
-withLines f = Y.unlines . map f . zip [0..] . Y.lines
-
-insert :: Int -> Y.YiString -> Zipper Y.YiString -> Zipper Y.YiString
-insert x what z = let line = Z.cursor z
-                   in Z.replace (yInsert x what line) z
-
-yInsert :: Int -> Y.YiString -> Y.YiString -> Y.YiString
-yInsert x what line = let (left,right) = Y.splitAt x line
-                       in Y.concat [left, what, right]
+insert :: Int -> Y.YiString -> Y.YiString -> Y.YiString
+insert x what line = let (left,right) = Y.splitAt x line
+                      in Y.concat [left, what, right]

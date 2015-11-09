@@ -11,6 +11,7 @@ module Eden.Types ( Pos
                   , bFilename
                   , bCursor
                   , bLines
+                  , curLine
 
                   , World ()
                   , emptyWorld
@@ -65,4 +66,7 @@ makeLenses ''World
 emptyWorld = World I.empty NORMAL 0 0
 
 type Eden r a = JurisdictionT World r IO a
+
+curLine :: RLens a (Zipper a)
+curLine = lens Z.cursor (flip Z.insert . Z.delete)
 

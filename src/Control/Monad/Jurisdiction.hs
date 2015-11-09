@@ -13,6 +13,7 @@ module Control.Monad.Jurisdiction
     , proclaim
     , proclaims
     , proclaimm
+    , RLens
     ) where
 
 import Control.Applicative (Applicative(..), (<$>))

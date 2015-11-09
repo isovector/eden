@@ -28,12 +28,12 @@ display b = do
                    in Y.concat [left, highlight char, rest]
              else line
       highlight char = Y.fromString $ concat
-        [ setSGRCode [ SetColor Foreground Vivid Black
-                    , SetColor Background Vivid White
-                    ]
-        , Y.toString char
-        , setSGRCode [Reset]
-        ]
+          [ setSGRCode [ SetColor Foreground Vivid Black
+                       , SetColor Background Vivid White
+                       ]
+          , Y.toString char
+          , setSGRCode [Reset]
+          ]
 
 prompt :: Eden World ()
 prompt = do
