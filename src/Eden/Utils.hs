@@ -1,8 +1,12 @@
 module Eden.Utils where
 
 import Eden.Types
+
 import Control.Lens
+import Data.List.Zipper (Zipper)
 import qualified Yi.Rope as Y
+import qualified Data.List.Zipper as Z
+
 
 withNextBuffer :: Eden (Maybe Buffer) a -> Eden World a
 withNextBuffer n = do
@@ -24,11 +28,9 @@ curBuffer = do
 withLines :: ((Int, Y.YiString) -> Y.YiString) -> Y.YiString -> Y.YiString
 withLines f = Y.unlines . map f . zip [0..] . Y.lines
 
-insert :: Pos -> Y.YiString -> Y.YiString -> Y.YiString
-insert (cx, cy) what s = withLines go s
-    where go (y, line) = if y == cy
-                             then yInsert cx what line
-                             else line
+insert :: Int -> Y.YiString -> Zipper Y.YiString -> Zipper Y.YiString
+insert x what z = let line = Z.cursor z
+                   in Z.replace (yInsert x what line) z
 
 yInsert :: Int -> Y.YiString -> Y.YiString -> Y.YiString
 yInsert x what line = let (left,right) = Y.splitAt x line

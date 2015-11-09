@@ -8,14 +8,15 @@ import Control.Applicative ((<$>))
 import Control.Monad
 import System.Console.ANSI
 import System.IO
-import qualified Data.IntMap as I
 import Data.Map (Map)
-import qualified Data.Map as M
-import qualified Yi.Rope as Y
+import qualified Data.IntMap      as I
+import qualified Data.Map         as M
+import qualified Yi.Rope          as Y
+import qualified Data.List.Zipper as Z
 
 display :: Buffer -> IO ()
 display b = do
-    let clines = Y.lines $ view bContent b
+    let clines = Z.toList $ view bLines b
         cursor = view bCursor b
         wcursor = map (inject cursor) $ zip [0..] clines
     forM_ wcursor $ putStrLn . Y.toString
@@ -30,8 +31,8 @@ display b = do
         [ setSGRCode [ SetColor Foreground Vivid Black
                     , SetColor Background Vivid White
                     ]
-          , Y.toString char
-          , setSGRCode [Reset]
+        , Y.toString char
+        , setSGRCode [Reset]
         ]
 
 prompt :: Eden World ()

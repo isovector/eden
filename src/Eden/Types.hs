@@ -10,7 +10,7 @@ module Eden.Types ( Pos
                   , emptyBuffer
                   , bFilename
                   , bCursor
-                  , bContent
+                  , bLines
 
                   , World ()
                   , emptyWorld
@@ -32,6 +32,8 @@ import Control.Monad.State
 import Control.Monad.Trans
 import Control.Lens
 import Control.Lens.TH
+import Data.List.Zipper (Zipper)
+import qualified Data.List.Zipper as Z
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as I
 import Data.Map (Map)
@@ -47,10 +49,10 @@ data Buffer =
     Buffer
     { _bFilename :: FilePath
     , _bCursor   :: Pos
-    , _bContent  :: Y.YiString
+    , _bLines    :: Zipper Y.YiString
     }
 makeLenses ''Buffer
-emptyBuffer = Buffer "[No Name]" (0,0) (Y.fromString "")
+emptyBuffer = Buffer "[No Name]" (0,0) Z.empty
 
 data World =
     World

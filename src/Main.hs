@@ -14,13 +14,6 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import qualified Yi.Rope as Y
 
-loadFile :: FilePath -> Eden (Maybe Buffer) ()
-loadFile f = do
-    result <- liftIO $ Y.readFile f
-    put . Just . Buffer f (0, 0) $ case result of
-        Right (text, _) -> text
-        Left _          -> error "bad file"
-
 main :: IO ()
 main = do
     s <- snd <$> runJurisdictionT (forever prompt) emptyWorld
