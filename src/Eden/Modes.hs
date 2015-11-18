@@ -35,7 +35,7 @@ modes = M.fromList
     , (INSERT, insertMode)
     ]
 
-openLine :: Eden Buffer () -> Eden World ()
+openLine :: Movement -> Eden World ()
 openLine dir = do
     withCurBuffer $ do
         dir
@@ -117,6 +117,10 @@ word = do
                     then liftM2 (||) isPunctuation isSymbol $ cur
                     else isAlphaNum cur
 
+delChar :: Eden Buffer ()
+delChar = do
+    (x,_) <- inspect bCursor
+    proclaims bCurLine $ delete x 1
 
 normalMode :: Eden World ()
 normalMode = do
@@ -149,6 +153,7 @@ nnoremap = M.fromList
     , ('o', openLine down)
     , ('0', withCurBuffer jumpStart)
     , ('$', withCurBuffer jumpEnd)
+    , ('x', withCurBuffer delChar)
     , ('i', proclaim wMode INSERT)
     , ('\x1b', proclaim wMode NORMAL)
     ]

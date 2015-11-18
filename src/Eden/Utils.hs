@@ -29,3 +29,7 @@ curBuffer = do
 insert :: Int -> Y.YiString -> Y.YiString -> Y.YiString
 insert x what line = let (left,right) = Y.splitAt x line
                       in Y.concat [left, what, right]
+
+delete :: Int -> Int -> Y.YiString -> Y.YiString
+delete x width line = let (left, right) = Y.splitAt x line
+                       in Y.concat [left, Y.drop width right]
