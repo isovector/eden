@@ -2,10 +2,11 @@
              FlexibleInstances, MultiParamTypeClasses, TypeFamilies,
              LambdaCase #-}
 
-module Eden.Types ( Pos
+module Eden.Types ( CurPos
                   , Mode (..)
                   , Eden
                   , Movement
+                  , Mark (..)
 
                   , Buffer (..)
                   , emptyBuffer
@@ -44,14 +45,14 @@ import qualified Data.Map         as M
 import qualified Yi.Rope          as Y
 
 
-type Pos = (Int, Int)
+type CurPos = (Int, Int)
 
 data Mode = NORMAL | INSERT deriving (Eq, Show, Read, Ord)
 
 data Buffer =
     Buffer
     { _bFilename :: FilePath
-    , _bCursor   :: Pos
+    , _bCursor   :: CurPos
     , _bLines    :: Zipper Y.YiString
     }
 makeLenses ''Buffer
@@ -77,4 +78,6 @@ emptyWorld = World I.empty NORMAL 0 0
 type Eden r a = JurisdictionT World r IO a
 
 type Movement = Eden Buffer ()
+
+data Mark = Mark Int Int deriving (Eq, Ord)
 

@@ -40,11 +40,21 @@ jumpEnd :: Movement
 jumpEnd =   subtract 1 . Y.length
         <$> inspect bCurLine >>= proclaim cursorX
 
+prevChar :: Movement
+prevChar = do
+    proclaims cursorX (subtract 1)
+    x <- inspect cursorX
+    if x < 0
+        then do
+            up
+            jumpEnd
+        else return ()
+
 nextChar :: Movement
 nextChar = do
     len   <- Y.length <$> inspect bCurLine
     proclaims cursorX (+ 1)
-    (x,_) <- inspect bCursor
+    x <- inspect cursorX
     if x >= len
         then do
             down
