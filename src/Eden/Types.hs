@@ -5,6 +5,7 @@
 module Eden.Types ( Pos
                   , Mode (..)
                   , Eden
+                  , Movement
 
                   , Buffer (..)
                   , emptyBuffer
@@ -74,4 +75,6 @@ makeLenses ''World
 emptyWorld = World I.empty NORMAL 0 0
 
 type Eden r a = JurisdictionT World r IO a
+
+type Movement = Eden Buffer ()
 
