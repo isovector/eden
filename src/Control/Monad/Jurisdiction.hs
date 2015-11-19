@@ -82,12 +82,13 @@ into = lens fromJust (const Just)
 
 restrictInto :: (Applicative m, Monad m)
              => RLens (Maybe r') r
-             -> JurisdictionT s r' m ()
-             -> JurisdictionT s r m ()
-restrictInto l m =
+             -> a
+             -> JurisdictionT s r' m a
+             -> JurisdictionT s r m a
+restrictInto l d m =
     (gets $ view l) >>= \case
         Just _  -> restrict (l . into) m
-        Nothing -> return ()
+        Nothing -> return d
 
 inspect :: (Applicative m, Monad m)
         => RLens i r

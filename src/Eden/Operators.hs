@@ -2,29 +2,40 @@ module Eden.Operators where
 
 import Eden.Marks
 import Eden.Modes.Normal
-import Eden.Movements
+import Eden.Motions
 import Eden.Types
+import Eden.Utils
 
 data Wiseness = Charwise
               | Linewise
               | Blockwise
 
-type Operator = Wiseness -> Mark -> Mark -> Eden Buffer ()
+type Operator = Wiseness -> Mark -> Mark -> Eden World ()
 
 
-runOperator :: Operator -> Movement -> Eden Buffer ()
+unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
+unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
+
+runOperator :: Operator -> Movement -> Eden World ()
 runOperator op m = do
-    here <- getMark
-    m
-    there <- getMark
-    jumpToMark here
+    (here, there) <- unsafeWithCurBuffer $ do
+        here <- getMark
+        m
+        there <- getMark
+        jumpToMark here
+        return (here, there)
     op Charwise here there
 
 deleteOp :: Operator
-deleteOp w b e = do
+deleteOp w b e = withCurBuffer $ do
     jumpToMark e
     prevChar
     case w of
       Charwise  -> do charwiseTowards delChar b
                       delChar
       otherwise -> error "only charwise is supported"
+
+changeOp :: Operator
+changeOp w b e = do
+    deleteOp w b e
+    proclaim wMode INSERT

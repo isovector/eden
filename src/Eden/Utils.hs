@@ -18,7 +18,12 @@ withNextBuffer n = do
 withCurBuffer :: Eden Buffer () -> Eden World ()
 withCurBuffer n = do
     current <- inquire wCurBuffer
-    restrictInto (wBuffers . at current) n
+    restrictInto (wBuffers . at current) () n
+
+maybeWithCurBuffer :: a -> Eden Buffer a -> Eden World a
+maybeWithCurBuffer d n = do
+    current <- inquire wCurBuffer
+    restrictInto (wBuffers . at current) d n
 
 curBuffer :: Eden a (Maybe Buffer)
 curBuffer = do

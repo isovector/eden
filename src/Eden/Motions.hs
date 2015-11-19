@@ -1,4 +1,4 @@
-module Eden.Movements where
+module Eden.Motions where
 
 import Eden.Types
 import Eden.Utils

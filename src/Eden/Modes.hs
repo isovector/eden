@@ -7,7 +7,7 @@ module Eden.Modes
     ) where
 
 import Eden.Modes.Normal
-import Eden.Movements
+import Eden.Motions
 import Eden.Operators
 import Eden.Types
 import Eden.Utils
@@ -58,7 +58,8 @@ nnoremap = M.fromList
     , ('0', withCurBuffer jumpStart)
     , ('$', withCurBuffer jumpEnd)
     , ('x', withCurBuffer delChar)
-    , ('d', withCurBuffer $ runOperator deleteOp word)
+    , ('d', runOperator deleteOp word)
+    , ('c', runOperator changeOp word)
     , ('i', proclaim wMode INSERT)
     , ('\x1b', proclaim wMode NORMAL)
     ]
