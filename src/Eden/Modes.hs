@@ -58,8 +58,8 @@ nnoremap = M.fromList
     , ('0', withCurBuffer jumpStart)
     , ('$', withCurBuffer jumpEnd)
     , ('x', withCurBuffer delChar)
-    , ('d', runOperator deleteOp word)
-    , ('c', runOperator changeOp word)
+    , ('d', runOperator deleteOp =<< liftMotion word)
+    , ('c', runOperator changeOp =<< liftMotion word)
     , ('i', proclaim wMode INSERT)
     , ('\x1b', proclaim wMode NORMAL)
     ]
