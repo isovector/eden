@@ -12,9 +12,9 @@ import Eden.Operators
 import Eden.Types
 import Eden.Utils
 
+import Control.Monad
 import Data.List (intercalate)
 import Data.Map (Map)
-import Control.Monad
 
 import qualified Data.List.Zipper as Z
 import qualified Data.Map as M
@@ -47,22 +47,17 @@ normalMode = do
        else nnoremap M.! result
 
 nnoremap :: Map Char (Eden World ())
-nnoremap = M.fromList
-    [ ('j', withCurBuffer down)
-    , ('k', withCurBuffer up)
-    , ('h', withCurBuffer $ proclaims cursorX (subtract 1))
-    , ('l', withCurBuffer $ proclaims cursorX (+ 1))
-    , ('w', withCurBuffer word)
-    , ('O', openLine $ return ())
+nnoremap = M.fromList $
+    [ ('O', openLine $ return ())
     , ('o', openLine down)
-    , ('0', withCurBuffer jumpStart)
-    , ('$', withCurBuffer jumpEnd)
     , ('x', withCurBuffer delChar)
     , ('d', runOperator deleteOp =<< liftMotion word)
     , ('c', runOperator changeOp =<< liftMotion word)
     , ('i', proclaim wMode INSERT)
     , ('\x1b', proclaim wMode NORMAL)
-    ]
+    ] ++ map toNMap (M.toList motions)
+  where
+    toNMap (key, motion) = (head key, withCurBuffer motion)
 
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList

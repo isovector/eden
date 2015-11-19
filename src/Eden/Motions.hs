@@ -8,6 +8,7 @@ import Control.Lens
 import Control.Monad
 import Control.Monad.Loops (untilM_)
 import Data.Char
+import Data.Map (Map)
 
 import qualified Data.IntMap as I
 import qualified Data.List.Zipper as Z
@@ -82,3 +83,14 @@ word = do
                $ if skip
                     then liftM2 (||) isPunctuation isSymbol $ cur
                     else isAlphaNum cur
+
+motions :: Map String Motion
+motions = M.fromList
+    [ ("j", down)
+    , ("k", up)
+    , ("h", proclaims cursorX (subtract 1))
+    , ("l", proclaims cursorX (+ 1))
+    , ("w", word)
+    , ("0", jumpStart)
+    , ("$", jumpEnd)
+    ]

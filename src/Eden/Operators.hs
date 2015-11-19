@@ -25,7 +25,7 @@ liftMotion m = do
         m
         there <- getMark
         jumpToMark here
-        return (here, there)
+        return (min here there, max here there)
 
 runOperator :: Operator -> TextObj -> Eden World ()
 runOperator op tobj = op Charwise tobj
