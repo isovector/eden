@@ -15,7 +15,7 @@ import qualified Data.Map as M
 import qualified Yi.Rope as Y
 
 
-up :: Movement
+up :: Motion
 up = do
     z <- inspect bLines
     if not $ Z.beginp z
@@ -24,7 +24,7 @@ up = do
              proclaims (bLines) Z.left
         else return ()
 
-down :: Movement
+down :: Motion
 down = do
     z <- inspect bLines
     if not $ Z.endp z
@@ -33,14 +33,14 @@ down = do
              proclaims (bLines) Z.right
         else return ()
 
-jumpStart :: Movement
+jumpStart :: Motion
 jumpStart = proclaim cursorX 0
 
-jumpEnd :: Movement
+jumpEnd :: Motion
 jumpEnd =   subtract 1 . Y.length
         <$> inspect bCurLine >>= proclaim cursorX
 
-prevChar :: Movement
+prevChar :: Motion
 prevChar = do
     proclaims cursorX (subtract 1)
     x <- inspect cursorX
@@ -50,7 +50,7 @@ prevChar = do
             jumpEnd
         else return ()
 
-nextChar :: Movement
+nextChar :: Motion
 nextChar = do
     len   <- Y.length <$> inspect bCurLine
     proclaims cursorX (+ 1)
@@ -61,14 +61,14 @@ nextChar = do
             jumpStart
         else return ()
 
-skipSpaces :: Movement
+skipSpaces :: Motion
 skipSpaces = do
     cur <- cursorChar
     if isSpace cur
         then nextChar `untilM_` liftM (not . isSpace) cursorChar
         else return ()
 
-word :: Movement
+word :: Motion
 word = do
     lineNum <- inspect cursorY
     skipChars <- liftM2 (||) isPunctuation isSymbol <$> cursorChar

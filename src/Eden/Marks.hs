@@ -13,7 +13,7 @@ sign x |  x >  0 =  1
        |  x == 0 =  0
        |  x <  0 = -1
 
-jumpToLine :: Int -> Movement
+jumpToLine :: Int -> Motion
 jumpToLine y = do
     (_, cy) <- inspect bCursor
     let dy = y - cy
@@ -23,7 +23,7 @@ jumpToLine y = do
        0  -> return ()
        1  -> mapM_ (const down) n
 
-jumpToMark :: Mark -> Movement
+jumpToMark :: Mark -> Motion
 jumpToMark (Mark mx my) = do
     jumpToLine my
     cx <- inspect cursorX

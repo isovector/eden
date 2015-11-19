@@ -14,7 +14,7 @@ import qualified Data.Map as M
 import qualified Yi.Rope as Y
 
 
-openLine :: Movement -> Eden World ()
+openLine :: Motion -> Eden World ()
 openLine dir = do
     withCurBuffer $ do
         dir

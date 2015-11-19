@@ -12,11 +12,11 @@ data Wiseness = Charwise
 
 type Operator = Wiseness -> Mark -> Mark -> Eden World ()
 
-
 unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
 unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
 
-runOperator :: Operator -> Movement -> Eden World ()
+
+runOperator :: Operator -> Motion -> Eden World ()
 runOperator op m = do
     (here, there) <- unsafeWithCurBuffer $ do
         here <- getMark
@@ -37,5 +37,6 @@ deleteOp w b e = withCurBuffer $ do
 
 changeOp :: Operator
 changeOp w b e = do
+    -- TODO(sandy): there is a bug here for `cw` stealing a trailing space
     deleteOp w b e
     proclaim wMode INSERT

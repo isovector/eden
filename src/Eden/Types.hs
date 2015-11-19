@@ -5,7 +5,7 @@
 module Eden.Types ( CurPos
                   , Mode (..)
                   , Eden
-                  , Movement
+                  , Motion
                   , Mark (..)
 
                   , Buffer (..)
@@ -77,7 +77,7 @@ emptyWorld = World I.empty NORMAL 0 0
 
 type Eden r a = JurisdictionT World r IO a
 
-type Movement = Eden Buffer ()
+type Motion = Eden Buffer ()
 
 data Mark = Mark Int Int deriving (Eq, Ord)
 
