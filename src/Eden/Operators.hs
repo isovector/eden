@@ -6,6 +6,7 @@ import Eden.Motions
 import Eden.Types
 import Eden.Utils
 
+
 data Wiseness = Charwise
               | Linewise
               | Blockwise
