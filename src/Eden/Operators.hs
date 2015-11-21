@@ -1,8 +1,11 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Eden.Operators where
 
 import Eden.Marks
 import Eden.Modes.Normal
 import Eden.Motions
+import Eden.TextObjs
 import Eden.Types
 import Eden.Utils
 
@@ -11,25 +14,19 @@ data Wiseness = Charwise
               | Linewise
               | Blockwise
 
-type TextObj = (Mark, Mark)
 type Operator = Wiseness -> TextObj -> Eden World ()
 
 unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
 unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
 
-liftMotion :: Motion -> Eden World TextObj
-liftMotion m = do
-    let emptyMark = Mark 0 0
-        empty = (emptyMark, emptyMark)
-    maybeWithCurBuffer empty $ do
-        here <- getMark
-        m
-        there <- getMark
-        jumpToMark here
-        return (min here there, max here there)
-
 runOperator :: Operator -> TextObj -> Eden World ()
 runOperator op tobj = op Charwise tobj
+
+operator :: Operator -> Eden World ()
+operator op = do
+    getTextObj >>= \case
+        Just m  -> m >>= runOperator op
+        Nothing -> return ()
 
 deleteOp :: Operator
 deleteOp w (b, e) = withCurBuffer $ do

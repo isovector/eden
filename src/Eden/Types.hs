@@ -7,6 +7,7 @@ module Eden.Types ( CurPos
                   , Eden
                   , Motion
                   , Mark (..)
+                  , TextObj
 
                   , Buffer (..)
                   , emptyBuffer
@@ -80,4 +81,6 @@ type Eden r a = JurisdictionT World r IO a
 type Motion = Eden Buffer ()
 
 data Mark = Mark Int Int deriving (Eq, Ord)
+
+type TextObj = (Mark, Mark)
 
