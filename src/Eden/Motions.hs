@@ -86,9 +86,8 @@ word = do
                     then liftM2 (||) isPunctuation isSymbol $ cur
                     else isAlphaNum cur
 
-sanitizeCursor :: Motion -> Motion
-sanitizeCursor m = do
-    m
+sanitizeCursor :: Motion
+sanitizeCursor = do
     len <- Y.length <$> inspect bCurLine
     proclaims cursorX (max 0 . min (len - 1))
 

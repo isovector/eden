@@ -7,6 +7,7 @@ module Eden.Modes
     ) where
 
 import Eden.Modes.Normal
+import Eden.TextObjs
 import Eden.Motions
 import Eden.Operators
 import Eden.Types
@@ -54,11 +55,13 @@ nnoremap = M.fromList $
     , ('x', withCurBuffer delChar)
     , ('d', operator deleteOp)
     , ('c', operator changeOp)
+    , ('D', operateToEnd deleteOp)
+    , ('C', operateToEnd changeOp)
     , ('i', proclaim wMode INSERT)
     , ('\x1b', proclaim wMode NORMAL)
     ] ++ map toNMap (M.toList motions)
   where
-    toNMap (key, motion) = (head key, withCurBuffer $ sanitizeCursor motion)
+    toNMap (key, motion) = (head key, withCurBuffer $ (>> sanitizeCursor) motion)
 
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList

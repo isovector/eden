@@ -19,6 +19,13 @@ type Operator = Wiseness -> TextObj -> Eden World ()
 unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
 unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
 
+operateToEnd :: Operator -> Eden World ()
+operateToEnd op = do
+    runOperator op =<< liftMotion jumpEnd
+    inquire wMode >>= \case
+        NORMAL -> withCurBuffer sanitizeCursor
+        INSERT -> return ()
+
 runOperator :: Operator -> TextObj -> Eden World ()
 runOperator op tobj@(b, e) =
     -- TODO(sandy): this logic is wrong for linewise
