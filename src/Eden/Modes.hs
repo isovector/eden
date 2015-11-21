@@ -12,6 +12,7 @@ import Eden.Operators
 import Eden.Types
 import Eden.Utils
 
+import Control.Arrow (second)
 import Control.Monad
 import Data.List (intercalate)
 import Data.Map (Map)
@@ -57,7 +58,7 @@ nnoremap = M.fromList $
     , ('\x1b', proclaim wMode NORMAL)
     ] ++ map toNMap (M.toList motions)
   where
-    toNMap (key, motion) = (head key, withCurBuffer motion)
+    toNMap (key, motion) = (head key, withCurBuffer $ sanitizeCursor motion)
 
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList

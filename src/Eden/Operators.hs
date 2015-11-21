@@ -20,7 +20,11 @@ unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
 unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
 
 runOperator :: Operator -> TextObj -> Eden World ()
-runOperator op tobj = op Charwise tobj
+runOperator op tobj@(b, e) =
+    -- TODO(sandy): this logic is wrong for linewise
+    if b /= e
+       then op Charwise tobj
+       else return ()
 
 operator :: Operator -> Eden World ()
 operator op = do

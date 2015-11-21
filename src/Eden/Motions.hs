@@ -21,7 +21,7 @@ up = do
     z <- inspect bLines
     if not $ Z.beginp z
         then do
-             proclaims cursorY (subtract 1)
+             proclaims cursorY (max 0 . subtract 1)
              proclaims (bLines) Z.left
         else return ()
 
@@ -38,8 +38,7 @@ jumpStart :: Motion
 jumpStart = proclaim cursorX 0
 
 jumpEnd :: Motion
-jumpEnd =   subtract 1 . Y.length
-        <$> inspect bCurLine >>= proclaim cursorX
+jumpEnd = Y.length <$> inspect bCurLine >>= proclaim cursorX
 
 prevChar :: Motion
 prevChar = do
@@ -47,8 +46,11 @@ prevChar = do
     x <- inspect cursorX
     if x < 0
         then do
+            z <- inspect bLines
             up
-            jumpEnd
+            if not $ Z.beginp z
+               then jumpEnd
+               else return ()
         else return ()
 
 nextChar :: Motion
@@ -83,6 +85,12 @@ word = do
                $ if skip
                     then liftM2 (||) isPunctuation isSymbol $ cur
                     else isAlphaNum cur
+
+sanitizeCursor :: Motion -> Motion
+sanitizeCursor m = do
+    m
+    len <- Y.length <$> inspect bCurLine
+    proclaims cursorX (max 0 . min (len - 1))
 
 motions :: Map String Motion
 motions = M.fromList

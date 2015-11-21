@@ -26,7 +26,7 @@ jumpToLine y = do
 jumpToMark :: Mark -> Motion
 jumpToMark (Mark mx my) = do
     jumpToLine my
-    cx <- inspect cursorX
+    proclaim cursorX mx
     return ()
 
 getMark :: Eden Buffer Mark
