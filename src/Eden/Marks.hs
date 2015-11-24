@@ -47,4 +47,3 @@ charwiseTowards what there = do
         here <- getMark
         return $ compare there here
 
-

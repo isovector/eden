@@ -91,13 +91,20 @@ sanitizeCursor = do
     len <- Y.length <$> inspect bCurLine
     proclaims cursorX (max 0 . min (len - 1))
 
-motions :: Map String Motion
-motions = M.fromList
-    [ ("j", down)
-    , ("k", up)
-    , ("h", proclaims cursorX (subtract 1))
+charwiseMotions :: Map String Motion
+charwiseMotions = M.fromList
+    [ ("h", proclaims cursorX (subtract 1))
     , ("l", proclaims cursorX (+ 1))
     , ("w", word)
     , ("0", jumpStart)
     , ("$", jumpEnd)
     ]
+
+linewiseMotions :: Map String Motion
+linewiseMotions = M.fromList
+    [ ("j", down)
+    , ("k", up)
+    ]
+
+motions :: Map String Motion
+motions = charwiseMotions `M.union` linewiseMotions

@@ -21,7 +21,7 @@ unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
 
 operateToEnd :: Operator -> Eden World ()
 operateToEnd op = do
-    runOperator op =<< liftMotion jumpEnd
+    runOperator op =<< liftCharwise jumpEnd
     inquire wMode >>= \case
         NORMAL -> withCurBuffer sanitizeCursor
         INSERT -> return ()

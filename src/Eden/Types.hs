@@ -6,8 +6,11 @@ module Eden.Types ( CurPos
                   , Mode (..)
                   , Eden
                   , Motion
-                  , Mark (..)
                   , TextObj
+
+                  , Mark (..)
+                  , markX
+                  , markY
 
                   , Buffer (..)
                   , emptyBuffer
@@ -81,6 +84,12 @@ type Eden r a = JurisdictionT World r IO a
 type Motion = Eden Buffer ()
 
 data Mark = Mark Int Int deriving (Eq, Ord)
+
+markX :: RLens Int Mark
+markX = lens (\(Mark x _) -> x) (\(Mark _ y) x -> Mark x y)
+
+markY :: RLens Int Mark
+markY = lens (\(Mark _ y) -> y) (\(Mark x _) y -> Mark x y)
 
 type TextObj = (Mark, Mark)
 
