@@ -47,3 +47,19 @@ charwiseTowards what there = do
         here <- getMark
         return $ compare there here
 
+
+linewiseTowards :: Eden Buffer () -> Mark -> Eden Buffer ()
+linewiseTowards what there = do
+    dir >>= \case
+        LT -> do what
+                 up
+                 linewiseTowards what there
+        EQ -> what
+        GT -> do what
+                 down
+                 linewiseTowards what there
+  where
+    dir = do
+        here <- getMark
+        return $ compare (view markY there) (view markY here)
+

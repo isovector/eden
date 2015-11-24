@@ -73,6 +73,7 @@ loadFile f = do
     result <- liftIO $ Y.readFile f
     put . Just . Buffer f (0, 0) $ case result of
         Right (text, _) -> Z.fromList $ Y.lines text
+        -- TODO(sandy): make this maybe not crash?
         Left _          -> error "bad file"
 
 asWords :: (String -> b) -> ([String] -> b)

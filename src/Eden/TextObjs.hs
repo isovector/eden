@@ -23,7 +23,7 @@ textobjs = M.fromList $
 
 emptyObj :: TextObj
 emptyObj = let emptyMark = Mark 0 0
-            in (emptyMark, emptyMark)
+            in TextObj Charwise emptyMark emptyMark
 
 liftCharwise :: Motion -> Eden World TextObj
 liftCharwise m = do
@@ -32,7 +32,7 @@ liftCharwise m = do
         m
         there <- getMark
         jumpToMark here
-        return (min here there, max here there)
+        return $ TextObj Charwise (min here there) (max here there)
 
 liftLinewise :: Motion -> Eden World TextObj
 liftLinewise m = do
@@ -49,7 +49,7 @@ liftLinewise m = do
         -- Extend x positions to be the start and end of lines
         let first' = set markX 0 first
             last'  = set markX lineLen last
-        return (first', last')
+        return $ TextObj Linewise first' last'
 
 
 

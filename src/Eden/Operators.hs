@@ -9,12 +9,10 @@ import Eden.TextObjs
 import Eden.Types
 import Eden.Utils
 
+import qualified Data.List.Zipper as Z
 
-data Wiseness = Charwise
-              | Linewise
-              | Blockwise
 
-type Operator = Wiseness -> TextObj -> Eden World ()
+type Operator = TextObj -> Eden World ()
 
 unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
 unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
@@ -27,10 +25,9 @@ operateToEnd op = do
         INSERT -> return ()
 
 runOperator :: Operator -> TextObj -> Eden World ()
-runOperator op tobj@(b, e) =
-    -- TODO(sandy): this logic is wrong for linewise
+runOperator op tobj@(TextObj w b e) =
     if b /= e
-       then op Charwise tobj
+       then op tobj
        else return ()
 
 operator :: Operator -> Eden World ()
@@ -40,16 +37,20 @@ operator op = do
         Nothing -> return ()
 
 deleteOp :: Operator
-deleteOp w (b, e) = withCurBuffer $ do
+deleteOp (TextObj w b e) = withCurBuffer $ do
     jumpToMark e
     prevChar
     case w of
-      Charwise  -> do charwiseTowards delChar b
-                      delChar
-      otherwise -> error "only charwise is supported"
+      Charwise -> do charwiseTowards delChar b
+                     delChar
+      Linewise -> do linewiseTowards (proclaims bLines Z.delete) b
+                     proclaim cursorX 0
 
 changeOp :: Operator
-changeOp w tobj = do
+changeOp tobj@(TextObj w _ _) = do
     -- TODO(sandy): there is a bug here for `cw` stealing a trailing space
-    deleteOp w tobj
+    deleteOp tobj
+    case w of
+      Charwise -> return ()
+      Linewise -> openLine $ return ()
     proclaim wMode INSERT
