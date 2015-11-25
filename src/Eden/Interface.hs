@@ -25,8 +25,8 @@ display b = do
   where
       inject (x,y) (cy, line) =
           if y == cy
-             then let (left,right) = Y.splitAt x line
-                      (char,rest) = Y.splitAt 1 right
+             then let (left, right) = Y.splitAt x $ Y.snoc line ' '
+                      (char, rest) = Y.splitAt 1 right
                    in Y.concat [left, highlight char, rest]
              else line
       highlight char = Y.fromString $ concat

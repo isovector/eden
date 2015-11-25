@@ -41,6 +41,7 @@ deleteOp (TextObj w b e) = withCurBuffer $ do
     jumpToMark e
     prevChar
     case w of
+      -- TODO(sandy): this won't delete newlines in charwise mode
       Charwise -> do charwiseTowards delChar b
                      delChar
       Linewise -> do linewiseTowards (proclaims bLines Z.delete) b

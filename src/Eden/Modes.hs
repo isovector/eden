@@ -28,16 +28,22 @@ modes = M.fromList
     , (INSERT, insertMode)
     ]
 
--- TODO(maguirea): enter breaks our cursor sync
 insertMode :: Eden World ()
 insertMode = do
     char <- liftIO getChar
-    if char == '\x1b'
-        then proclaim wMode NORMAL
-        else withCurBuffer $ do
-                 (x,_) <- inspect bCursor
-                 proclaims bCurLine $ insert x (Y.fromString [char])
-                 proclaims cursorX (+ 1)
+    case char of
+      '\x1b' -> proclaim wMode NORMAL
+      '\n'   ->
+          withCurBuffer $ do
+              x <- inspect cursorX
+              proclaims bLines (lineBreak x)
+              proclaims cursorY (+ 1)
+              proclaim cursorX 0
+      _      ->
+          withCurBuffer $ do
+              x <- inspect cursorX
+              proclaims bCurLine $ insert x (Y.fromString [char])
+              proclaims cursorX (+ 1)
 
 normalMode :: Eden World ()
 normalMode = do

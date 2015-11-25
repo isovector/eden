@@ -47,6 +47,12 @@ insert :: Int -> Y.YiString -> Y.YiString -> Y.YiString
 insert x what line = let (left,right) = Y.splitAt x line
                       in Y.concat [left, what, right]
 
+lineBreak :: Int -> Zipper Y.YiString -> Zipper Y.YiString
+lineBreak x z = let (left, right) = Y.splitAt x $ Z.cursor z
+                    sameLine = Z.replace left z
+                    nextLine = Z.right sameLine
+                 in Z.insert right nextLine
+
 delete :: Int -> Int -> Y.YiString -> Y.YiString
 delete x width line = let (left, right) = Y.splitAt x line
                        in Y.concat [left, Y.drop width right]
