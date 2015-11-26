@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Eden.Modes
     ( modes
     , insertMode
@@ -39,6 +41,14 @@ insertMode = do
               proclaims bLines (lineBreak x)
               proclaims cursorY (+ 1)
               proclaim cursorX 0
+      '\127' -> -- backspace
+          withCurBuffer $ do
+              -- there is a bug here for backspace at 0,0
+              prevChar
+              inspect cursorX >>= \case
+                0 -> proclaims bLines $ lineJoin Nothing
+                _ -> delChar
+      -- 27 is delete
       _      ->
           withCurBuffer $ do
               x <- inspect cursorX
