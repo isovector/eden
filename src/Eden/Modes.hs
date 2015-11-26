@@ -59,6 +59,7 @@ nnoremap = M.fromList $
     [ ('O', openLine $ return ())
     , ('o', openLine down)
     , ('x', withCurBuffer delChar)
+    , ('J', withCurBuffer joinLine)
     , ('d', operator deleteOp)
     , ('c', operator changeOp)
     , ('D', operateToEnd deleteOp)

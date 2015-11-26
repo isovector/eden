@@ -1,8 +1,10 @@
 module Eden.Modes.Normal
     ( openLine
     , delChar
+    , joinLine
     ) where
 
+import Eden.Motions
 import Eden.Types
 import Eden.Utils
 
@@ -25,3 +27,8 @@ delChar :: Eden Buffer ()
 delChar = do
     (x,_) <- inspect bCursor
     proclaims bCurLine $ delete x 1
+
+joinLine :: Eden Buffer ()
+joinLine = do
+    jumpEnd
+    proclaims bLines . lineJoin . Just $ Y.fromString " "

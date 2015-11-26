@@ -3,6 +3,7 @@ module Eden.Utils where
 import Eden.Types
 
 import Control.Lens
+import Data.Maybe (catMaybes)
 import Data.List.Zipper (Zipper)
 
 import qualified Data.List.Zipper as Z
@@ -52,6 +53,16 @@ lineBreak x z = let (left, right) = Y.splitAt x $ Z.cursor z
                     sameLine = Z.replace left z
                     nextLine = Z.right sameLine
                  in Z.insert right nextLine
+
+lineJoin :: Maybe Y.YiString -> Zipper Y.YiString -> Zipper Y.YiString
+lineJoin sep z = let nextLine = Z.cursor $ Z.right z
+                     thisLine = Z.cursor z
+                     deleted = Z.left . Z.delete $ Z.right z
+                  in flip Z.replace deleted . Y.concat
+                         $ catMaybes [ Just thisLine
+                                     , sep
+                                     , Just nextLine
+                                     ]
 
 delete :: Int -> Int -> Y.YiString -> Y.YiString
 delete x width line = let (left, right) = Y.splitAt x line
