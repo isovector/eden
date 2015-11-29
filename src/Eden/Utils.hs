@@ -2,12 +2,17 @@ module Eden.Utils where
 
 import Eden.Types
 
+import Control.Applicative ((<$>))
 import Control.Lens
+import Control.Monad.IO.Class
 import Data.Maybe (catMaybes)
 import Data.List.Zipper (Zipper)
 
 import qualified Data.List.Zipper as Z
 import qualified Yi.Rope          as Y
+
+import Control.Concurrent.MVar
+
 
 withNextBuffer :: Eden (Maybe Buffer) a -> Eden World a
 withNextBuffer n = do
@@ -67,3 +72,17 @@ lineJoin sep z = let nextLine = Z.cursor $ Z.right z
 delete :: Int -> Int -> Y.YiString -> Y.YiString
 delete x width line = let (left, right) = Y.splitAt x line
                        in Y.concat [left, Y.drop width right]
+
+memoIO :: MonadIO m => m a -> m (m a)
+memoIO action = do
+  ref <- liftIO $ newMVar Nothing
+  return $ do
+      x <- maybe action return =<< liftIO (takeMVar ref)
+      liftIO . putMVar ref $ Just x
+      return x
+
+repeatable :: Eden World () -> Eden World ()
+repeatable action = do
+    proclaim wRepeated action
+    action
+

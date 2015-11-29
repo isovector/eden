@@ -26,6 +26,7 @@ module Eden.Types ( CurPos
                   , wMode
                   , wCurBuffer
                   , wNextBuffer
+                  , wRepeated
 
                   , module Control.Monad.Jurisdiction
                   , view, set
@@ -76,9 +77,10 @@ data World =
     , _wMode    :: Mode
     , _wCurBuffer :: Int
     , _wNextBuffer :: Int
+    , _wRepeated :: JurisdictionT World World IO ()
     }
 makeLenses ''World
-emptyWorld = World I.empty NORMAL 0 0
+emptyWorld = World I.empty NORMAL 0 0 $ return ()
 
 type Eden r a = JurisdictionT World r IO a
 
