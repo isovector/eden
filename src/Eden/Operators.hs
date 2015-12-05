@@ -32,8 +32,7 @@ runOperator op tobj@(TextObj w b e) =
 
 operator :: Operator -> Eden World ()
 operator op = do
-    memoized <- memoIO getTextObj
-    memoized >>= \case
+    getTextObj >>= \case
         Just m  -> m >>= runOperator op
         Nothing -> return ()
 

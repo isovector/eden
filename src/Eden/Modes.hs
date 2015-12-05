@@ -70,12 +70,11 @@ nnoremap = M.fromList $
     , ('o', openLine down)
     , ('x', withCurBuffer delChar)
     , ('J', withCurBuffer joinLine)
-    , ('d', repeatable $ operator deleteOp)
+    , ('d', operator deleteOp)
     , ('c', operator changeOp)
     , ('D', operateToEnd deleteOp)
     , ('C', operateToEnd changeOp)
     , ('i', proclaim wMode INSERT)
-    , ('.', repeatAction)
     , ('\x1b', proclaim wMode NORMAL)
     ] ++ map toNMap (M.toList motions)
   where

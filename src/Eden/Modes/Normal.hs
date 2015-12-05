@@ -2,7 +2,6 @@ module Eden.Modes.Normal
     ( openLine
     , delChar
     , joinLine
-    , repeatAction
     ) where
 
 import Eden.Motions
@@ -33,8 +32,3 @@ joinLine :: Eden Buffer ()
 joinLine = do
     jumpEnd
     proclaims bLines . lineJoin . Just $ Y.fromString " "
-
-repeatAction :: Eden World ()
-repeatAction = do
-    x <- inquire wRepeated
-    x
