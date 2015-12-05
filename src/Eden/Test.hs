@@ -4,8 +4,10 @@
 import Control.Applicative ((<$>))
 import Control.Monad.IO.Class
 import Control.Concurrent.MVar
+import Data.Dynamic
 import Data.Map (Map)
 import qualified Data.Map as M
+import Data.Maybe (fromJust)
 import Control.Monad.State
 import Control.Monad.RWS
 import Data.IORef
@@ -42,7 +44,7 @@ runMemoT :: Functor m => MemoT k r m a -> m a
 runMemoT = fmap fst . flip runStateT M.empty
 
 
-type ReplayT r m a = RWST () [r] [r] m a
+type ReplayT m a = RWST () [Dynamic] [Dynamic] m a
 dequeue :: MonadState [r] m => m (Maybe r)
 dequeue = do
     get >>= \case
@@ -51,22 +53,22 @@ dequeue = do
             put xs
             return $ Just x
 
-sample :: MonadIO m => IO r -> ReplayT r m r
+sample :: Typeable r => MonadIO m => IO r -> ReplayT m r
 sample action = do
     a <- dequeue >>= \case
-        Just x  -> return x
+        Just x  -> return . fromJust $ fromDynamic x
         Nothing -> liftIO action
-    tell [a]
+    tell [toDyn a]
     return a
 
-record :: Monad m => ReplayT r m a -> m (m a)
+record :: Monad m => ReplayT m a -> m (m a)
 record action = do
     (a, w) <- evalRWST action () []
     return $ do
         evalRWST action () w
         return a
 
-testReplay :: ReplayT String IO ()
+testReplay :: ReplayT IO ()
 testReplay = do
     first <- sample $ do
         putStr "first> "
