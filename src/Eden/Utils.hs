@@ -67,3 +67,9 @@ lineJoin sep z = let nextLine = Z.cursor $ Z.right z
 delete :: Int -> Int -> Y.YiString -> Y.YiString
 delete x width line = let (left, right) = Y.splitAt x line
                        in Y.concat [left, Y.drop width right]
+
+repeatable :: Repeatable World () -> Eden World ()
+repeatable action = do
+    memo <- record action
+    proclaim wRepeated memo
+

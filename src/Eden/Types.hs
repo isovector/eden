@@ -1,10 +1,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TemplateHaskell,
              FlexibleInstances, MultiParamTypeClasses, TypeFamilies,
-             LambdaCase #-}
+             LambdaCase, DeriveDataTypeable #-}
 
 module Eden.Types ( CurPos
                   , Mode (..)
                   , Eden
+                  , Repeatable
                   , Motion
                   , Wiseness (..)
                   , TextObj (..)
@@ -26,23 +27,29 @@ module Eden.Types ( CurPos
                   , wMode
                   , wCurBuffer
                   , wNextBuffer
+                  , wRepeated
 
                   , module Control.Monad.Jurisdiction
+                  , module Control.Monad.Replay
+                  , (<$>)
                   , view, set
                   , lift, liftIO
                   , ask, asks
                   , get, gets, put
                   ) where
 
+import Control.Applicative ((<$>))
 import Control.Lens
 import Control.Lens.TH
 import Control.Monad.Jurisdiction
 import Control.Monad.Reader
+import Control.Monad.Replay
 import Control.Monad.State
 import Control.Monad.Trans
 import Data.IntMap (IntMap)
 import Data.List.Zipper (Zipper)
 import Data.Map (Map)
+import Data.Typeable
 
 import qualified Data.IntMap      as I
 import qualified Data.List.Zipper as Z
@@ -76,11 +83,13 @@ data World =
     , _wMode    :: Mode
     , _wCurBuffer :: Int
     , _wNextBuffer :: Int
-    }
+    , _wRepeated :: JurisdictionT World World IO ()
+    } deriving (Typeable)
 makeLenses ''World
-emptyWorld = World I.empty NORMAL 0 0
+emptyWorld = World I.empty NORMAL 0 0 $ return ()
 
-type Eden r a = JurisdictionT World r IO a
+type Eden r = JurisdictionT World r IO
+type Repeatable s = ReplayT (Eden s)
 
 type Motion = Eden Buffer ()
 
@@ -98,5 +107,5 @@ data Wiseness = Charwise
               deriving (Eq, Show)
 
 data TextObj = TextObj Wiseness Mark Mark
-    deriving (Eq, Show)
+    deriving (Eq, Show, Typeable)
 

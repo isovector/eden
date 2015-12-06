@@ -17,23 +17,23 @@ type Operator = TextObj -> Eden World ()
 unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
 unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
 
-operateToEnd :: Operator -> Eden World ()
+operateToEnd :: Operator -> Repeatable World ()
 operateToEnd op = do
-    runOperator op =<< liftCharwise jumpEnd
-    inquire wMode >>= \case
+    runOperator op =<< lift (liftCharwise jumpEnd)
+    lift $ inquire wMode >>= \case
         NORMAL -> withCurBuffer sanitizeCursor
         INSERT -> return ()
 
-runOperator :: Operator -> TextObj -> Eden World ()
-runOperator op tobj@(TextObj w b e) =
+runOperator :: Operator -> TextObj -> Repeatable World ()
+runOperator op tobj@(TextObj w b e) = lift $
     if b /= e
        then op tobj
        else return ()
 
-operator :: Operator -> Eden World ()
+operator :: Operator -> Repeatable World ()
 operator op = do
     getTextObj >>= \case
-        Just m  -> m >>= runOperator op
+        Just m  -> lift m >>= runOperator op
         Nothing -> return ()
 
 deleteOp :: Operator

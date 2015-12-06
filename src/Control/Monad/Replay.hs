@@ -23,6 +23,7 @@ newtype ReplayT m a =
              , MonadIO
              , MonadState  [Dynamic]
              , MonadWriter [Dynamic]
+             , MonadTrans
              )
 
 -- | Removes the first element from a list State and returns it.

@@ -1,6 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TemplateHaskell,
              FlexibleInstances, MultiParamTypeClasses, TypeFamilies,
-             DeriveFunctor, RankNTypes, ImpredicativeTypes, LambdaCase #-}
+             DeriveFunctor, RankNTypes, ImpredicativeTypes, LambdaCase,
+             DeriveDataTypeable #-}
 
 module Control.Monad.Jurisdiction
     ( Jurisdiction ()
@@ -24,6 +25,7 @@ import Control.Monad.State
 import Control.Monad.Trans
 import Control.Lens
 import Data.Maybe (fromJust)
+import Data.Typeable
 
 
 type RLens r s = Lens s s r r
@@ -31,7 +33,7 @@ type RLens r s = Lens s s r r
 newtype JurisdictionT s r m a =
     JurisdictionT
     { runJurisdictionT' :: RLens r s -> s -> m (a, s, RLens r s) }
-    deriving (Functor)
+    deriving (Functor, Typeable)
 
 instance (Applicative m, Monad m) => Applicative (JurisdictionT s r m) where
     pure x = JurisdictionT $ \l s -> pure (x, s, l)

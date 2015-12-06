@@ -16,7 +16,7 @@ import qualified Yi.Rope as Y
 
 textobjs :: Map String (Eden World TextObj)
 textobjs = M.fromList $
-    [ 
+    [
     -- ("aw", aWord)
     ] ++ map (second liftCharwise) (M.toList charwiseMotions)
       ++ map (second liftLinewise) (M.toList linewiseMotions)
@@ -52,9 +52,8 @@ liftLinewise m = do
         return $ TextObj Linewise first' last'
 
 
-
-getTextObj :: Eden World (Maybe (Eden World TextObj))
-getTextObj = do
+getTextObj :: Repeatable World (Maybe (Eden World TextObj))
+getTextObj = sample $ do
     remaining <- liftIO . newIORef $ M.toList textobjs
     go remaining
   where
