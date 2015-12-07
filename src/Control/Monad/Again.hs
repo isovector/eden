@@ -2,10 +2,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Control.Monad.Replay
-    ( ReplayT ()
-    , sample
-    , record
+module Control.Monad.Again
+    ( Again ()
+    , again
+    , runAgain
     ) where
 
 import Control.Applicative (Applicative(..))
@@ -15,8 +15,8 @@ import Control.Monad.RWS
 
 -- | A monad transformer adding the ability to record the results
 -- of IO actions and later replay them.
-newtype ReplayT m a =
-    ReplayT { runReplayT :: RWST () [Dynamic] [Dynamic] m a }
+newtype Again m a =
+    Again { runAgain' :: RWST () [Dynamic] [Dynamic] m a }
     deriving ( Functor
              , Applicative
              , Monad
@@ -37,11 +37,11 @@ dequeue = do
             return $ Just x
 
 -- | Marks an IO action to be memoized after its first invocation.
-sample :: ( MonadIO m
-          , Typeable r)
-       => IO r
-       -> ReplayT m r
-sample action = do
+again :: ( MonadIO m
+         , Typeable r)
+      => IO r
+      -> Again m r
+again action = do
     a <- dequeue >>= \case
         Just x  -> return . fromJust $ fromDynamic x
         Nothing -> liftIO action
@@ -50,12 +50,11 @@ sample action = do
 
 -- | Runs an action and records all of its sampled IO. Returns a
 -- action which when invoked will use the recorded IO.
-record :: Monad m
-       => ReplayT m a
-       -> m (m a)
-record action = do
-    (a, w) <- evalRWST (runReplayT action) () []
+runAgain :: Monad m
+         => Again m a
+         -> m (m a)
+runAgain action = do
+    (a, w) <- evalRWST (runAgain' action) () []
     return $ do
-        evalRWST (runReplayT action) () w
+        evalRWST (runAgain' action) () w
         return a
-

@@ -70,6 +70,6 @@ delete x width line = let (left, right) = Y.splitAt x line
 
 repeatable :: Repeatable World () -> Eden World ()
 repeatable action = do
-    memo <- record action
+    memo <- runAgain action
     proclaim wRepeated memo
 

@@ -35,7 +35,5 @@ joinLine = do
     proclaims bLines . lineJoin . Just $ Y.fromString " "
 
 repeatAction :: Eden World ()
-repeatAction = do
-    x <- inquire wRepeated
-    x
+repeatAction = join $ inquire wRepeated
 

@@ -30,7 +30,7 @@ module Eden.Types ( CurPos
                   , wRepeated
 
                   , module Control.Monad.Jurisdiction
-                  , module Control.Monad.Replay
+                  , module Control.Monad.Again
                   , (<$>)
                   , view, set
                   , lift, liftIO
@@ -43,7 +43,7 @@ import Control.Lens
 import Control.Lens.TH
 import Control.Monad.Jurisdiction
 import Control.Monad.Reader
-import Control.Monad.Replay
+import Control.Monad.Again
 import Control.Monad.State
 import Control.Monad.Trans
 import Data.IntMap (IntMap)
@@ -89,7 +89,7 @@ makeLenses ''World
 emptyWorld = World I.empty NORMAL 0 0 $ return ()
 
 type Eden r = JurisdictionT World r IO
-type Repeatable s = ReplayT (Eden s)
+type Repeatable s = Again (Eden s)
 
 type Motion = Eden Buffer ()
 

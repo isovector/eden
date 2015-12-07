@@ -53,7 +53,7 @@ liftLinewise m = do
 
 
 getTextObj :: Repeatable World (Maybe (Eden World TextObj))
-getTextObj = sample $ do
+getTextObj = again $ do
     remaining <- liftIO . newIORef $ M.toList textobjs
     go remaining
   where
