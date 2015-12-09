@@ -68,6 +68,11 @@ delete :: Int -> Int -> Y.YiString -> Y.YiString
 delete x width line = let (left, right) = Y.splitAt x line
                        in Y.concat [left, Y.drop width right]
 
+liftRepeat :: Eden World () -> Eden World ()
+liftRepeat action = do
+    action
+    proclaim wRepeated action
+
 repeatable :: Repeatable World () -> Eden World ()
 repeatable action = do
     memo <- runAgain action
