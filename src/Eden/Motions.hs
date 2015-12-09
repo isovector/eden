@@ -19,20 +19,16 @@ import qualified Yi.Rope as Y
 up :: Motion
 up = do
     z <- inspect bLines
-    if not $ Z.beginp z
-        then do
-             proclaims cursorY (max 0 . subtract 1)
-             proclaims (bLines) Z.left
-        else return ()
+    when (not $ Z.beginp z) $ do
+        proclaims cursorY (max 0 . subtract 1)
+        proclaims (bLines) Z.left
 
 down :: Motion
 down = do
     z <- inspect bLines
-    if not $ Z.endp z
-        then do
-             proclaims cursorY (+ 1)
-             proclaims (bLines) Z.right
-        else return ()
+    when (not $ Z.endp z) $ do
+        proclaims cursorY (+ 1)
+        proclaims (bLines) Z.right
 
 jumpStart :: Motion
 jumpStart = proclaim cursorX 0
@@ -44,32 +40,25 @@ prevChar :: Motion
 prevChar = do
     proclaims cursorX (subtract 1)
     x <- inspect cursorX
-    if x < 0
-        then do
-            z <- inspect bLines
-            up
-            if not $ Z.beginp z
-               then jumpEnd
-               else return ()
-        else return ()
+    when (x < 0) $ do
+        z <- inspect bLines
+        up
+        when (not $ Z.beginp z) jumpEnd
 
 nextChar :: Motion
 nextChar = do
     len   <- Y.length <$> inspect bCurLine
     proclaims cursorX (+ 1)
     x <- inspect cursorX
-    if x >= len
-        then do
-            down
-            jumpStart
-        else return ()
+    when (x >= len) $ do
+        down
+        jumpStart
 
 skipSpaces :: Motion
 skipSpaces = do
     cur <- cursorChar
-    if isSpace cur
-        then nextChar `untilM_` liftM (not . isSpace) cursorChar
-        else return ()
+    when (isSpace cur) $
+        nextChar `untilM_` liftM (not . isSpace) cursorChar
 
 word :: Motion
 word = do

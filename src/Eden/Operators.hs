@@ -9,6 +9,8 @@ import Eden.TextObjs
 import Eden.Types
 import Eden.Utils
 
+import Control.Monad (when)
+
 import qualified Data.List.Zipper as Z
 
 
@@ -26,9 +28,7 @@ operateToEnd op = do
 
 runOperator :: Operator -> TextObj -> Repeatable World ()
 runOperator op tobj@(TextObj w b e) = lift $
-    if b /= e
-       then op tobj
-       else return ()
+    when (b /= e) $ op tobj
 
 operator :: Operator -> Repeatable World ()
 operator op = do
