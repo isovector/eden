@@ -27,14 +27,20 @@ import qualified Yi.Rope as Y
 modes :: Map Mode (Eden World ())
 modes = M.fromList
     [ (NORMAL, normalMode)
-    , (INSERT, insertMode)
+    , (INSERT, appendRepeat insertMode)
     ]
 
-insertMode :: Eden World ()
+setMode :: Mode -> Eden World ()
+setMode mode = do
+    when (mode == INSERT) $
+        proclaim wRepeated $ return ()
+    proclaim wMode mode
+
+insertMode :: Repeatable World ()
 insertMode = do
-    char <- liftIO getChar
-    case char of
-      '\x1b' -> proclaim wMode NORMAL
+    char <- again $ liftIO getChar
+    lift $ case char of
+      '\x1b' -> setMode NORMAL
       '\n'   ->
           withCurBuffer $ do
               x <- inspect cursorX
@@ -66,8 +72,8 @@ normalMode = do
 
 nnoremap :: Map Char (Eden World ())
 nnoremap = M.fromList $
-    [ ('O', openLine $ return ())
-    , ('o', openLine down)
+    [ ('O', liftRepeat . openLine $ return ())
+    , ('o', liftRepeat $ openLine down)
     , ('x', liftRepeat $ withCurBuffer delChar)
     , ('J', liftRepeat $ withCurBuffer joinLine)
     , ('d', repeatable $ operator deleteOp)
@@ -75,8 +81,8 @@ nnoremap = M.fromList $
     , ('D', repeatable $ operateToEnd deleteOp)
     , ('C', repeatable $ operateToEnd changeOp)
     , ('.', repeatAction)
-    , ('i', proclaim wMode INSERT)
-    , ('\x1b', proclaim wMode NORMAL)
+    , ('i', setMode INSERT)
+    , ('\x1b', setMode NORMAL)
     ] ++ map toNMap (M.toList motions)
   where
     toNMap (key, motion) = (head key, withCurBuffer $ (>> sanitizeCursor) motion)

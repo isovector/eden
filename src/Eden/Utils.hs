@@ -78,3 +78,11 @@ repeatable action = do
     memo <- runAgain action
     proclaim wRepeated memo
 
+appendRepeat :: Repeatable World () -> Eden World ()
+appendRepeat action = do
+    memo <- runAgain action
+    prev <- inquire wRepeated
+    proclaim wRepeated $ do
+        prev
+        memo
+
