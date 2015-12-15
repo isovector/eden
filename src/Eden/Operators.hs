@@ -16,9 +16,6 @@ import qualified Data.List.Zipper as Z
 
 type Operator = TextObj -> Eden World ()
 
-unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
-unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
-
 operateToEnd :: Operator -> Repeatable World ()
 operateToEnd op = do
     runOperator op =<< lift (liftCharwise jumpEnd)

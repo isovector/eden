@@ -3,6 +3,7 @@ module Eden.Modes.Normal
     , delChar
     , joinLine
     , repeatAction
+    , repeatMotion
     ) where
 
 import Eden.Motions
@@ -36,4 +37,7 @@ joinLine = do
 
 repeatAction :: Eden World ()
 repeatAction = join $ inquire wRepeated
+
+repeatMotion :: Eden Buffer ()
+repeatMotion = join $ inquire wRepMotion
 

@@ -21,6 +21,9 @@ maybeWithCurBuffer d n = do
     current <- inquire wCurBuffer
     restrictInto (wBuffers . at current) d n
 
+unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
+unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
+
 withCurBuffer :: Eden Buffer () -> Eden World ()
 withCurBuffer = maybeWithCurBuffer ()
 
@@ -77,6 +80,11 @@ repeatable :: Repeatable World () -> Eden World ()
 repeatable action = do
     memo <- runAgain action
     proclaim wRepeated memo
+
+repeatableMotion :: Repeatable Buffer () -> Eden World ()
+repeatableMotion action = do
+    memo <- unsafeWithCurBuffer $ runAgain action
+    proclaim wRepMotion memo
 
 appendRepeat :: Repeatable World () -> Eden World ()
 appendRepeat action = do

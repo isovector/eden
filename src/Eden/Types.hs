@@ -28,6 +28,7 @@ module Eden.Types ( CurPos
                   , wCurBuffer
                   , wNextBuffer
                   , wRepeated
+                  , wRepMotion
 
                   , module Control.Monad.Jurisdiction
                   , module Control.Monad.Again
@@ -84,9 +85,10 @@ data World =
     , _wCurBuffer :: Int
     , _wNextBuffer :: Int
     , _wRepeated :: JurisdictionT World World IO ()
+    , _wRepMotion :: JurisdictionT World Buffer IO ()
     } deriving (Typeable)
 makeLenses ''World
-emptyWorld = World I.empty NORMAL 0 0 $ return ()
+emptyWorld = World I.empty NORMAL 0 0 (return ()) $ return ()
 
 type Eden r = JurisdictionT World r IO
 type Repeatable s = Again (Eden s)

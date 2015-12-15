@@ -75,6 +75,21 @@ word = do
                     then liftM2 (||) isPunctuation isSymbol $ cur
                     else isAlphaNum cur
 
+toChar :: Repeatable Buffer ()
+toChar = do
+    char <- again . liftIO $ getChar
+    lift $ do
+        nextChar `untilM_` liftM (== char) cursorChar
+        prevChar
+
+findChar :: Repeatable Buffer ()
+findChar = do
+    char <- again . liftIO $ getChar
+    lift $ do
+        cur <- cursorChar
+        when (cur /= char) $ do
+            nextChar `untilM_` liftM (== char) cursorChar
+
 sanitizeCursor :: Motion
 sanitizeCursor = do
     len <- Y.length <$> inspect bCurLine

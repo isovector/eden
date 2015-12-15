@@ -80,12 +80,15 @@ nnoremap = M.fromList $
     , ('c', repeatable $ operator changeOp)
     , ('D', repeatable $ operateToEnd deleteOp)
     , ('C', repeatable $ operateToEnd changeOp)
+    , ('t', repeatableMotion $ toChar)
+    , ('f', repeatableMotion $ findChar)
     , ('.', repeatAction)
+    , (';', withCurBuffer repeatMotion)
     , ('i', setMode INSERT)
     , ('\x1b', setMode NORMAL)
     ] ++ map toNMap (M.toList motions)
   where
-    toNMap (key, motion) = (head key, withCurBuffer $ (>> sanitizeCursor) motion)
+    toNMap (key, motion) = (head key, withCurBuffer $ motion >> sanitizeCursor)
 
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList
