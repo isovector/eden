@@ -1,5 +1,18 @@
-module Eden.Motions where
+{-# LANGUAGE LambdaCase #-}
 
+module Eden.Motions
+    ( skipSpaces
+    , word
+    , toChar
+    , findChar
+    , charwiseMotions
+    , linewiseMotions
+    , motions
+    , module Eden.PrimitiveMotions
+    ) where
+
+import Eden.Marks
+import Eden.PrimitiveMotions
 import Eden.Types
 import Eden.Utils
 
@@ -14,45 +27,6 @@ import qualified Data.IntMap as I
 import qualified Data.List.Zipper as Z
 import qualified Data.Map as M
 import qualified Yi.Rope as Y
-
-
-up :: Motion
-up = do
-    z <- inspect bLines
-    when (not $ Z.beginp z) $ do
-        proclaims cursorY (max 0 . subtract 1)
-        proclaims (bLines) Z.left
-
-down :: Motion
-down = do
-    z <- inspect bLines
-    when (not $ Z.endp z) $ do
-        proclaims cursorY (+ 1)
-        proclaims (bLines) Z.right
-
-jumpStart :: Motion
-jumpStart = proclaim cursorX 0
-
-jumpEnd :: Motion
-jumpEnd = Y.length <$> inspect bCurLine >>= proclaim cursorX
-
-prevChar :: Motion
-prevChar = do
-    proclaims cursorX (subtract 1)
-    x <- inspect cursorX
-    when (x < 0) $ do
-        z <- inspect bLines
-        up
-        when (not $ Z.beginp z) jumpEnd
-
-nextChar :: Motion
-nextChar = do
-    len   <- Y.length <$> inspect bCurLine
-    proclaims cursorX (+ 1)
-    x <- inspect cursorX
-    when (x >= len) $ do
-        down
-        jumpStart
 
 skipSpaces :: Motion
 skipSpaces = do
@@ -89,11 +63,6 @@ findChar = do
         cur <- cursorChar
         when (cur /= char) $ do
             nextChar `untilM_` liftM (== char) cursorChar
-
-sanitizeCursor :: Motion
-sanitizeCursor = do
-    len <- Y.length <$> inspect bCurLine
-    proclaims cursorX (max 0 . min (len - 1))
 
 charwiseMotions :: Map String Motion
 charwiseMotions = M.fromList

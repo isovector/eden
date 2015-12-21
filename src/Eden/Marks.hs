@@ -2,7 +2,7 @@
 
 module Eden.Marks where
 
-import Eden.Motions
+import Eden.PrimitiveMotions
 import Eden.Types
 import Eden.Utils
 
