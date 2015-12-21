@@ -28,11 +28,29 @@ import qualified Data.List.Zipper as Z
 import qualified Data.Map as M
 import qualified Yi.Rope as Y
 
+
+onLine :: Motion -> Motion
+onLine m = do
+    here <- getMark
+    m
+    there <- view markY <$> getMark
+    unless (view markY here == there) $
+        -- TODO(sandy): visual bell?
+        jumpToMark here
+
+before :: Motion -> Motion
+before m = m >> prevChar
+
+findNext :: (Char -> Bool) -> Motion
+findNext p = nextChar `untilM_` liftM p cursorChar
+
+ifIs :: (Char -> Bool) -> Motion -> Motion
+ifIs p m = do
+    x <- cursorChar
+    when (p x) m
+
 skipSpaces :: Motion
-skipSpaces = do
-    cur <- cursorChar
-    when (isSpace cur) $
-        nextChar `untilM_` liftM (not . isSpace) cursorChar
+skipSpaces = ifIs isSpace $ findNext (not . isSpace)
 
 word :: Motion
 word = do
@@ -52,17 +70,12 @@ word = do
 toChar :: Repeatable Buffer ()
 toChar = do
     char <- again . liftIO $ getChar
-    lift $ do
-        nextChar `untilM_` liftM (== char) cursorChar
-        prevChar
+    lift . before $ findNext (== char)
 
 findChar :: Repeatable Buffer ()
 findChar = do
     char <- again . liftIO $ getChar
-    lift $ do
-        cur <- cursorChar
-        when (cur /= char) $ do
-            nextChar `untilM_` liftM (== char) cursorChar
+    lift $ findNext (== char)
 
 charwiseMotions :: Map String Motion
 charwiseMotions = M.fromList
