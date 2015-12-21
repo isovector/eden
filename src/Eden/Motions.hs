@@ -70,12 +70,12 @@ word = do
 toChar :: Repeatable Buffer ()
 toChar = do
     char <- again . liftIO $ getChar
-    lift . before $ findNext (== char)
+    lift . onLine . before $ findNext (== char)
 
 findChar :: Repeatable Buffer ()
 findChar = do
     char <- again . liftIO $ getChar
-    lift $ findNext (== char)
+    lift . onLine $ findNext (== char)
 
 charwiseMotions :: Map String Motion
 charwiseMotions = M.fromList
