@@ -27,58 +27,75 @@ import Control.Monad.Trans
 import Control.Lens
 import Data.Maybe (fromJust)
 import Data.Typeable
+import Debug.Trace
 
 
 type RLens r s = Lens s s r r
 
 newtype JurisdictionT s r m a =
     JurisdictionT
-    { runJurisdictionT' :: RLens r s -> s -> m (a, s, RLens r s) }
+    { runJurisdictionT' :: Bool
+                        -> RLens r s
+                        -> s
+                        -> m (a, s, RLens r s, Bool) }
     deriving (Functor, Typeable)
 
 instance (Applicative m, Monad m) => Applicative (JurisdictionT s r m) where
-    pure x = JurisdictionT $ \l s -> pure (x, s, l)
+    pure x = JurisdictionT $ \v l s -> pure (x, s, l, v)
     (<*>)  = ap
 
 instance (Applicative m, Monad m) => Monad (JurisdictionT s r m) where
     return   = pure
-    ac >>= k = JurisdictionT $ \l s -> do
-        (x, st', l') <- runJurisdictionT' ac l s
-        runJurisdictionT' (k x) l' st'
+    ac >>= k = JurisdictionT $ \v l s ->
+        if v
+            then do
+                (x, st', l', v') <- runJurisdictionT' ac v l s
+                runJurisdictionT' (k x) v' l' st'
+            else return (undefined, s, l, v)
 
 instance (Applicative m, Monad m) => MonadReader s (JurisdictionT s r m) where
-    ask   = JurisdictionT $ \l s -> return (s, s, l)
+    ask   = JurisdictionT $ \v l s -> return (s, s, l, v)
     local = error "Can't call local on a Jurisdiction"
 
 instance (Applicative m, Monad m) => MonadState r (JurisdictionT s r m) where
-    get   = JurisdictionT $ \l s -> return (view l s, s, l)
-    put v = JurisdictionT $ \l s -> return ((), set l v s, l)
+    get   = JurisdictionT $ \v l s -> return (view l s, s, l, v)
+    put x = JurisdictionT $ \v l s -> return ((), set l x s, l, v)
 
 instance MonadTrans (JurisdictionT s r) where
-    lift x = JurisdictionT $ \l s -> x >>= (\a -> return (a, s, l))
+    lift x = JurisdictionT $ \v l s -> x >>= (\a -> return (a, s, l, v))
 
 instance (Applicative m, MonadIO m) => MonadIO (JurisdictionT s r m) where
     liftIO = lift . liftIO
 
+instance (Applicative m, Monad m) => MonadPlus (JurisdictionT s r m) where
+    mplus x y = JurisdictionT $ \v l s -> do
+        x'@(xa, xs, xl, v') <- runJurisdictionT' x v l s
+        if v'
+           then return x'
+           else runJurisdictionT' y v l s
+    mzero = JurisdictionT $ \v l s -> return (undefined, s, l, False)
+
 runJurisdictionT :: (Functor m)
                  => JurisdictionT s s m a
                  -> s
-                 -> m (a, s)
-runJurisdictionT ac = fmap (\(a, s, l) -> (a, s)) . runJurisdictionT' ac id
+                 -> m (Maybe (a, s))
+runJurisdictionT ac = fmap (\(a, s, _, v) ->
+                            if v then Just (a, s) else Nothing)
+                    . runJurisdictionT' ac True id
 
 type Jurisdiction s r = JurisdictionT s r Identity
 runJurisdiction :: Jurisdiction s s a
                 -> s
-                -> (a, s)
+                -> Maybe (a, s)
 runJurisdiction ac = runIdentity . runJurisdictionT ac
 
 restrict :: (Monad m)
          => RLens r' r
          -> JurisdictionT s r' m a
          -> JurisdictionT s r m a
-restrict l' m = JurisdictionT $ \l s -> do
-    (a, s', _) <- runJurisdictionT' m (l . l') s
-    return (a, s', l)
+restrict l' m = JurisdictionT $ \v l s -> do
+    (a, s', _, v') <- runJurisdictionT' m v (l . l') s
+    return (a, s', l, v')
 
 into :: RLens a (Maybe a)
 into = lens fromJust (const Just)
@@ -97,9 +114,9 @@ overwrite :: (Applicative m, Monad m)
           => RLens r' r
           -> JurisdictionT r r' m a
           -> JurisdictionT s r m a
-overwrite l m = fmap fst
-              $ get >>= lift
-              . runJurisdictionT (restrict l m)
+overwrite l' m = JurisdictionT $ \v l s -> do
+    (a, s', _, v') <- runJurisdictionT' m v l' $ view l s
+    return (a, set l s' s, l, v')
 
 vote :: (Applicative m, Monad m)
      => a

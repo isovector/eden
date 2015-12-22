@@ -7,6 +7,7 @@ import Eden.Utils
 
 import Control.Applicative ((<$>))
 import Control.Monad (forever)
+import Data.Maybe (fromJust)
 
 harness :: Eden World ()
 harness = do
@@ -15,6 +16,6 @@ harness = do
 
 main :: IO ()
 main = do
-    s <- snd <$> runJurisdictionT harness emptyWorld
+    s <- snd . fromJust <$> runJurisdictionT harness emptyWorld
     seq s $ return ()
 
