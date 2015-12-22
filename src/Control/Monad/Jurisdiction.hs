@@ -92,6 +92,14 @@ restrictInto l d m =
         Just _  -> restrict (l . into) m
         Nothing -> return d
 
+overwrite :: (Applicative m, Monad m)
+          => RLens r' r
+          -> JurisdictionT r r' m a
+          -> JurisdictionT s r m a
+overwrite l m = fmap fst
+              $ get >>= lift
+              . runJurisdictionT (restrict l m)
+
 inspect :: (Applicative m, Monad m)
         => RLens i r
         -> JurisdictionT s r m i
