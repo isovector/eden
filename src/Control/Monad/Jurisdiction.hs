@@ -11,6 +11,7 @@ module Control.Monad.Jurisdiction
     , restrict
     , restrictInto
     , overwrite
+    , vote
     , inquire
     , inspect
     , proclaim
@@ -99,6 +100,16 @@ overwrite :: (Applicative m, Monad m)
 overwrite l m = fmap fst
               $ get >>= lift
               . runJurisdictionT (restrict l m)
+
+vote :: (Applicative m, Monad m)
+     => a
+     -> JurisdictionT s r m (Maybe a)
+     -> JurisdictionT s r m a
+vote d m = do
+    this <- get
+    m >>= \case
+        Just a  -> return a
+        Nothing -> put this >> return d
 
 inspect :: (Applicative m, Monad m)
         => RLens i r
