@@ -10,11 +10,11 @@ module Control.Monad.Jurisdiction
     , runJurisdictionT
     , restrict
     , restrictInto
+    , overwrite
     , inquire
     , inspect
     , proclaim
     , proclaims
-    , proclaimm
     , RLens
     ) where
 
@@ -125,12 +125,3 @@ proclaims :: (Applicative m, Monad m)
 proclaims l f = do
     state <- get
     put $ set l (f $ view l state) state
-
-proclaimm :: (Applicative m, Monad m)
-          => RLens r' r
-          -> (r' -> r')
-          -> JurisdictionT s (Maybe r) m ()
-proclaimm l f = do
-    get >>= \case
-        Just x  -> put . Just $ set l (f $ view l x) x
-        Nothing -> return ()
