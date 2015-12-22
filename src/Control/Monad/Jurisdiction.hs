@@ -19,7 +19,7 @@ module Control.Monad.Jurisdiction
     , RLens
     ) where
 
-import Control.Applicative (Applicative(..), (<$>))
+import Control.Applicative (Alternative(..), Applicative(..), (<$>))
 import Control.Monad (ap, liftM2)
 import Control.Monad.Reader
 import Control.Monad.State
@@ -74,6 +74,10 @@ instance (Applicative m, Monad m) => MonadPlus (JurisdictionT s r m) where
            then return x'
            else runJurisdictionT' y v l s
     mzero = JurisdictionT $ \v l s -> return (undefined, s, l, False)
+
+instance (Applicative m, Monad m) => Alternative (JurisdictionT s r m) where
+    (<|>) = mplus
+    empty = mzero
 
 runJurisdictionT :: (Functor m)
                  => JurisdictionT s s m a
