@@ -31,12 +31,10 @@ import qualified Yi.Rope as Y
 
 onLine :: Motion -> Motion
 onLine m = do
-    here <- getMark
-    m
-    there <- view markY <$> getMark
-    unless (view markY here == there) $
-        -- TODO(sandy): visual bell?
-        jumpToMark here
+    here <- inspect cursorY
+    try $ do
+        m
+        inspect cursorY >>= guard . (here ==)
 
 before :: Motion -> Motion
 before m = m >> prevChar

@@ -3,11 +3,17 @@ module Eden.Utils where
 import Eden.Types
 
 import Control.Lens
+import Control.Monad (mplus)
 import Data.Maybe (catMaybes)
 import Data.List.Zipper (Zipper)
 
 import qualified Data.List.Zipper as Z
 import qualified Yi.Rope          as Y
+
+try :: Eden r () -> Eden r ()
+try m = do
+    this <- get
+    mplus m $ put this
 
 withNextBuffer :: Eden (Maybe Buffer) a -> Eden World a
 withNextBuffer n = do

@@ -88,7 +88,8 @@ nnoremap = M.fromList $
     , ('\x1b', setMode NORMAL)
     ] ++ map toNMap (M.toList motions)
   where
-    toNMap (key, motion) = (head key, withCurBuffer $ motion >> sanitizeCursor)
+    toNMap (key, motion) = ( head key
+                           , withCurBuffer . try $ motion >> sanitizeCursor)
 
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList

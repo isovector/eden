@@ -16,17 +16,15 @@ import qualified Yi.Rope as Y
 
 up :: Motion
 up = do
-    z <- inspect bLines
-    when (not $ Z.beginp z) $ do
-        proclaims cursorY (max 0 . subtract 1)
-        proclaims (bLines) Z.left
+    inspect bLines >>= guard . not . Z.beginp
+    proclaims cursorY (max 0 . subtract 1)
+    proclaims bLines Z.left
 
 down :: Motion
 down = do
-    z <- inspect bLines
-    when (not $ Z.endp z) $ do
-        proclaims cursorY (+ 1)
-        proclaims (bLines) Z.right
+    proclaims cursorY (+ 1)
+    proclaims bLines Z.right
+    inspect bLines >>= guard . not . Z.endp
 
 jumpStart :: Motion
 jumpStart = proclaim cursorX 0
