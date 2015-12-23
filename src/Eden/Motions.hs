@@ -41,7 +41,7 @@ findNextChar p = nextChar `untilM_` liftM p cursorChar
 
 -- TODO(sandy): need to make this reversible
 findNextLine :: (Y.YiString -> Bool) -> Motion
-findNextLine p = down `untilM_` liftM p (Z.cursor <$> inspect bLines)
+findNextLine p = down `untilM_` liftM p $ Z.cursor <$> inspect bLines
 
 ifIs :: (Char -> Bool) -> Motion -> Motion
 ifIs p m = do

@@ -1,6 +1,6 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, TemplateHaskell,
-             FlexibleInstances, MultiParamTypeClasses, TypeFamilies,
-             DeriveFunctor, RankNTypes, ImpredicativeTypes, LambdaCase,
+{-# LANGUAGE GeneralizedNewtypeDeriving,
+             FlexibleInstances, MultiParamTypeClasses,
+             DeriveFunctor, ImpredicativeTypes, LambdaCase,
              DeriveDataTypeable #-}
 
 module Control.Monad.Jurisdiction
@@ -10,6 +10,7 @@ module Control.Monad.Jurisdiction
     , runJurisdictionT
     , restrict
     , restrictInto
+    , bill
     , overwrite
     , vote
     , inquire
@@ -21,7 +22,6 @@ module Control.Monad.Jurisdiction
 
 import Control.Applicative (Alternative(..), Applicative(..), (<$>))
 import Control.Monad (ap, liftM2)
-import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Trans
 import Control.Lens
@@ -52,10 +52,6 @@ instance (Applicative m, Monad m) => Monad (JurisdictionT s r m) where
                 (x, st', l', v') <- runJurisdictionT' ac v l s
                 runJurisdictionT' (k x) v' l' st'
             else return (undefined, s, l, v)
-
-instance (Applicative m, Monad m) => MonadReader s (JurisdictionT s r m) where
-    ask   = JurisdictionT $ \v l s -> return (s, s, l, v)
-    local = error "Can't call local on a Jurisdiction"
 
 instance (Applicative m, Monad m) => MonadState r (JurisdictionT s r m) where
     get   = JurisdictionT $ \v l s -> return (view l s, s, l, v)
@@ -114,6 +110,9 @@ restrictInto l d m =
         Just _  -> restrict (l . into) m
         Nothing -> return d
 
+bill :: (Applicative m, Monad m) => JurisdictionT s r m s
+bill = JurisdictionT $ \v l s -> return (s, s, l, v)
+
 overwrite :: (Applicative m, Monad m)
           => RLens r' r
           -> JurisdictionT r r' m a
@@ -140,7 +139,7 @@ inspect l = gets $ view l
 inquire :: (Applicative m, Monad m)
         => RLens i s
         -> JurisdictionT s r m i
-inquire l = ask $ view l
+inquire l = view l <$> bill
 
 proclaim :: (Applicative m, Monad m)
          => RLens r' r
