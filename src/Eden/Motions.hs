@@ -11,19 +11,15 @@ module Eden.Motions
     , module Eden.PrimitiveMotions
     ) where
 
-import Eden.Marks
 import Eden.PrimitiveMotions
 import Eden.Types
 import Eden.Utils
 
-import Control.Applicative ((<$>))
-import Control.Lens
 import Control.Monad
 import Control.Monad.Loops (untilM_)
 import Data.Char
 import Data.Map (Map)
 
-import qualified Data.IntMap as I
 import qualified Data.List.Zipper as Z
 import qualified Data.Map as M
 import qualified Yi.Rope as Y
@@ -39,8 +35,13 @@ onLine m = do
 before :: Motion -> Motion
 before m = m >> prevChar
 
-findNext :: (Char -> Bool) -> Motion
-findNext p = nextChar `untilM_` liftM p cursorChar
+-- TODO(sandy): need to make this reversible
+findNextChar :: (Char -> Bool) -> Motion
+findNextChar p = nextChar `untilM_` liftM p cursorChar
+
+-- TODO(sandy): need to make this reversible
+findNextLine :: (Y.YiString -> Bool) -> Motion
+findNextLine p = down `untilM_` liftM p (Z.cursor <$> inspect bLines)
 
 ifIs :: (Char -> Bool) -> Motion -> Motion
 ifIs p m = do
@@ -48,7 +49,7 @@ ifIs p m = do
     when (p x) m
 
 skipSpaces :: Motion
-skipSpaces = ifIs isSpace $ findNext (not . isSpace)
+skipSpaces = ifIs isSpace $ findNextChar (not . isSpace)
 
 word :: Motion
 word = do
@@ -65,15 +66,19 @@ word = do
                     then liftM2 (||) isPunctuation isSymbol $ cur
                     else isAlphaNum cur
 
+-- TODO(sandy): this should land on the last character of the last line
+paragraph :: Motion
+paragraph = findNextLine Y.null
+
 toChar :: Repeatable Buffer ()
 toChar = do
     char <- again . liftIO $ getChar
-    lift . onLine . before $ findNext (== char)
+    lift . onLine . before $ findNextChar (== char)
 
 findChar :: Repeatable Buffer ()
 findChar = do
     char <- again . liftIO $ getChar
-    lift . onLine $ findNext (== char)
+    lift . onLine $ findNextChar (== char)
 
 charwiseMotions :: Map String Motion
 charwiseMotions = M.fromList
@@ -82,6 +87,7 @@ charwiseMotions = M.fromList
     , ("w", word)
     , ("0", jumpStart)
     , ("$", jumpEnd)
+    , ("}", paragraph)
     ]
 
 linewiseMotions :: Map String Motion
