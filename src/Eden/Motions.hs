@@ -36,12 +36,12 @@ before :: Motion -> Motion
 before m = m >> prevChar
 
 -- TODO(sandy): need to make this reversible
-findNextChar :: (Char -> Bool) -> Motion
-findNextChar p = nextChar `untilM_` liftM p cursorChar
+findNextChar :: (Char -> Bool) -> Direction -> Motion
+findNextChar p d = moveChar d `untilM_` liftM p cursorChar
 
 -- TODO(sandy): need to make this reversible
-findNextLine :: (Y.YiString -> Bool) -> Motion
-findNextLine p = down `untilM_` liftM p $ Z.cursor <$> inspect bLines
+findNextLine :: (Y.YiString -> Bool) -> Direction -> Motion
+findNextLine p d = moveLine d `untilM_` liftM p $ Z.cursor <$> inspect bLines
 
 ifIs :: (Char -> Bool) -> Motion -> Motion
 ifIs p m = do
@@ -49,7 +49,7 @@ ifIs p m = do
     when (p x) m
 
 skipSpaces :: Motion
-skipSpaces = ifIs isSpace $ findNextChar (not . isSpace)
+skipSpaces = ifIs isSpace $ findNextChar (not . isSpace) Forwards
 
 word :: Motion
 word = do
@@ -67,18 +67,18 @@ word = do
                     else isAlphaNum cur
 
 -- TODO(sandy): this should land on the last character of the last line
-paragraph :: Motion
+paragraph :: Direction -> Motion
 paragraph = findNextLine Y.null
 
-toChar :: Repeatable Buffer ()
-toChar = do
+toChar :: Direction -> Repeatable Buffer ()
+toChar d = do
     char <- again . liftIO $ getChar
-    lift . onLine . before $ findNextChar (== char)
+    lift . onLine . before $ findNextChar (== char) d
 
-findChar :: Repeatable Buffer ()
-findChar = do
+findChar :: Direction -> Repeatable Buffer ()
+findChar d = do
     char <- again . liftIO $ getChar
-    lift . onLine $ findNextChar (== char)
+    lift . onLine $ findNextChar (== char) d
 
 charwiseMotions :: Map String Motion
 charwiseMotions = M.fromList
@@ -87,7 +87,8 @@ charwiseMotions = M.fromList
     , ("w", word)
     , ("0", jumpStart)
     , ("$", jumpEnd)
-    , ("}", paragraph)
+    , ("{", paragraph Backwards)
+    , ("}", paragraph Forwards)
     ]
 
 linewiseMotions :: Map String Motion

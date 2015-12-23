@@ -50,6 +50,16 @@ nextChar = do
         down
         jumpStart
 
+dir :: a -> a -> Direction -> a
+dir f _ Forwards  = f
+dir _ b Backwards = b
+
+moveChar :: Direction -> Motion
+moveChar = dir nextChar prevChar
+
+moveLine :: Direction -> Motion
+moveLine = dir down up
+
 sanitizeCursor :: Motion
 sanitizeCursor = do
     len <- Y.length <$> inspect bCurLine

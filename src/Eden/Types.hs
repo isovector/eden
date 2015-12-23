@@ -6,6 +6,7 @@ module Eden.Types ( CurPos
                   , Mode (..)
                   , Eden
                   , Repeatable
+                  , Direction (..)
                   , Motion
                   , Wiseness (..)
                   , TextObj (..)
@@ -91,6 +92,7 @@ makeLenses ''World
 emptyWorld = World I.empty NORMAL 0 0 (return ()) $ return ()
 
 type Eden r = JurisdictionT World r IO
+data Direction = Backwards | Forwards
 type Repeatable s = Again (Eden s)
 
 type Motion = Eden Buffer ()
