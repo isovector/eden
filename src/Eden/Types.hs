@@ -78,6 +78,7 @@ curLine = lens Z.cursor (flip Z.insert . Z.delete)
 bCurLine :: RLens Y.YiString Buffer
 bCurLine = bLines . curLine
 
+data Direction = Backwards | Forwards
 
 data World =
     World
@@ -86,13 +87,12 @@ data World =
     , _wCurBuffer :: Int
     , _wNextBuffer :: Int
     , _wRepeated :: JurisdictionT World World IO ()
-    , _wRepMotion :: JurisdictionT World Buffer IO ()
+    , _wRepMotion :: ReaderT Direction (JurisdictionT World Buffer IO) ()
     } deriving (Typeable)
 makeLenses ''World
 emptyWorld = World I.empty NORMAL 0 0 (return ()) $ return ()
 
 type Eden r = JurisdictionT World r IO
-data Direction = Backwards | Forwards
 type Repeatable s = Again (Eden s)
 
 type Motion = Eden Buffer ()

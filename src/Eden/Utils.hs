@@ -4,6 +4,7 @@ import Eden.Types
 
 import Control.Lens
 import Control.Monad (mplus)
+import Control.Monad.Reader
 import Data.Maybe (catMaybes)
 import Data.List.Zipper (Zipper)
 
@@ -14,6 +15,10 @@ try :: Eden r () -> Eden r ()
 try m = do
     this <- get
     mplus m $ put this
+
+otherDir :: Direction -> Direction
+otherDir Forwards  = Backwards
+otherDir Backwards = Forwards
 
 withNextBuffer :: Eden (Maybe Buffer) a -> Eden World a
 withNextBuffer n = do
@@ -87,9 +92,9 @@ repeatable action = do
     memo <- runAgain action
     proclaim wRepeated memo
 
-repeatableMotion :: Repeatable Buffer () -> Eden World ()
+repeatableMotion :: Again (ReaderT Direction (Eden Buffer)) () -> Eden World ()
 repeatableMotion action = do
-    memo <- unsafeWithCurBuffer $ runAgain action
+    memo <- unsafeWithCurBuffer . flip runReaderT Forwards $ runAgain action
     proclaim wRepMotion memo
 
 appendRepeat :: Repeatable World () -> Eden World ()

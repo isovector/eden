@@ -11,6 +11,7 @@ import Eden.Types
 import Eden.Utils
 
 import Control.Monad
+import Control.Monad.Reader
 import Data.Map (Map)
 
 import qualified Data.List.Zipper as Z
@@ -38,6 +39,6 @@ joinLine = do
 repeatAction :: Eden World ()
 repeatAction = join $ inquire wRepeated
 
-repeatMotion :: Eden Buffer ()
-repeatMotion = join $ inquire wRepMotion
+repeatMotion :: Direction -> Eden Buffer ()
+repeatMotion = (inquire wRepMotion >>=) . flip runReaderT
 

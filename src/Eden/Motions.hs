@@ -17,6 +17,7 @@ import Eden.Utils
 
 import Control.Monad
 import Control.Monad.Loops (untilM_)
+import Control.Monad.Reader
 import Data.Char
 import Data.Map (Map)
 
@@ -32,8 +33,8 @@ onLine m = do
         m
         inspect cursorY >>= guard . (here ==)
 
-before :: Motion -> Motion
-before m = m >> prevChar
+before :: Direction -> Motion -> Motion
+before d m = m >> moveChar (otherDir d)
 
 -- TODO(sandy): need to make this reversible
 findNextChar :: (Char -> Bool) -> Direction -> Motion
@@ -70,15 +71,23 @@ word = do
 paragraph :: Direction -> Motion
 paragraph = findNextLine Y.null
 
-toChar :: Direction -> Repeatable Buffer ()
+reversible :: (Direction -> Motion)
+           -> Direction
+           -> ReaderT Direction (Eden Buffer) ()
+reversible m d = ask >>= \case
+    Forwards  -> lift $ m d
+    Backwards -> lift . m $ otherDir d
+
+toChar :: Direction -> Again (ReaderT Direction (Eden Buffer)) ()
 toChar d = do
     char <- again . liftIO $ getChar
-    lift . onLine . before $ findNextChar (== char) d
+    lift . flip reversible d $
+        \d' -> onLine . before d' $ findNextChar (== char) d'
 
-findChar :: Direction -> Repeatable Buffer ()
+findChar :: Direction -> Again (ReaderT Direction (Eden Buffer)) ()
 findChar d = do
     char <- again . liftIO $ getChar
-    lift . onLine $ findNextChar (== char) d
+    lift . flip reversible d $ onLine . findNextChar (== char)
 
 charwiseMotions :: Map String Motion
 charwiseMotions = M.fromList
