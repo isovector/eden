@@ -17,24 +17,24 @@ import qualified Yi.Rope as Y
 up :: Motion
 up = do
     inspect bLines >>= guard . not . Z.beginp
-    proclaims cursorY (max 0 . subtract 1)
-    proclaims bLines Z.left
+    arrests cursorY (max 0 . subtract 1)
+    arrests bLines Z.left
 
 down :: Motion
 down = do
-    proclaims cursorY (+ 1)
-    proclaims bLines Z.right
+    arrests cursorY (+ 1)
+    arrests bLines Z.right
     inspect bLines >>= guard . not . Z.endp
 
 jumpStart :: Motion
-jumpStart = proclaim cursorX 0
+jumpStart = arrest cursorX 0
 
 jumpEnd :: Motion
-jumpEnd = Y.length <$> inspect bCurLine >>= proclaim cursorX
+jumpEnd = Y.length <$> inspect bCurLine >>= arrest cursorX
 
 prevChar :: Motion
 prevChar = do
-    proclaims cursorX (subtract 1)
+    arrests cursorX (subtract 1)
     x <- inspect cursorX
     when (x < 0) $ do
         z <- inspect bLines
@@ -44,7 +44,7 @@ prevChar = do
 nextChar :: Motion
 nextChar = do
     len   <- Y.length <$> inspect bCurLine
-    proclaims cursorX (+ 1)
+    arrests cursorX (+ 1)
     x <- inspect cursorX
     when (x >= len) $ do
         down
@@ -63,4 +63,4 @@ moveLine = dir down up
 sanitizeCursor :: Motion
 sanitizeCursor = do
     len <- Y.length <$> inspect bCurLine
-    proclaims cursorX (max 0 . min (len - 1))
+    arrests cursorX (max 0 . min (len - 1))

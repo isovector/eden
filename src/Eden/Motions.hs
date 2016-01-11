@@ -105,8 +105,8 @@ snipe d = do
 
 charwiseMotions :: Map String Motion
 charwiseMotions = M.fromList
-    [ ("h", proclaims cursorX (subtract 1))
-    , ("l", proclaims cursorX (+ 1))
+    [ ("h", arrests cursorX (subtract 1))
+    , ("l", arrests cursorX (+ 1))
     , ("w", word)
     , ("0", jumpStart)
     , ("$", jumpEnd)

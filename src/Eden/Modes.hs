@@ -33,8 +33,8 @@ modes = M.fromList
 setMode :: Mode -> Eden World ()
 setMode mode = do
     when (mode == INSERT) $
-        proclaim wRepeated $ return ()
-    proclaim wMode mode
+        arrest wRepeated $ return ()
+    arrest wMode mode
 
 insertMode :: Repeatable World ()
 insertMode = do
@@ -44,22 +44,22 @@ insertMode = do
       '\n'   ->
           withCurBuffer $ do
               x <- inspect cursorX
-              proclaims bLines (lineBreak x)
-              proclaims cursorY (+ 1)
-              proclaim cursorX 0
+              arrests bLines (lineBreak x)
+              arrests cursorY (+ 1)
+              arrest cursorX 0
       '\127' -> -- backspace
           withCurBuffer $ do
               -- there is a bug here for backspace at 0,0
               prevChar
               inspect cursorX >>= \case
-                0 -> proclaims bLines $ lineJoin Nothing
+                0 -> arrests bLines $ lineJoin Nothing
                 _ -> delChar
       -- 27 is delete
       _      ->
           withCurBuffer $ do
               x <- inspect cursorX
-              proclaims bCurLine $ insert x (Y.fromString [char])
-              proclaims cursorX (+ 1)
+              arrests bCurLine $ insert x (Y.fromString [char])
+              arrests cursorX (+ 1)
 
 normalMode :: Eden World ()
 normalMode = do

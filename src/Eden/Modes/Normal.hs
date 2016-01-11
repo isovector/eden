@@ -23,18 +23,18 @@ openLine :: Motion -> Eden World ()
 openLine dir = do
     withCurBuffer $ do
         dir
-        proclaims bLines (Z.insert $ Y.fromString "")
-    proclaim wMode INSERT
+        arrests bLines (Z.insert $ Y.fromString "")
+    arrest wMode INSERT
 
 delChar :: Eden Buffer ()
 delChar = do
     (x,_) <- inspect bCursor
-    proclaims bCurLine $ delete x 1
+    arrests bCurLine $ delete x 1
 
 joinLine :: Eden Buffer ()
 joinLine = do
     jumpEnd
-    proclaims bLines . lineJoin . Just $ Y.fromString " "
+    arrests bLines . lineJoin . Just $ Y.fromString " "
 
 repeatAction :: Eden World ()
 repeatAction = join $ inquire wRepeated

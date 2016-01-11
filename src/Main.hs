@@ -16,6 +16,6 @@ harness = do
 
 main :: IO ()
 main = do
-    s <- snd . fromJust <$> runJurisdictionT harness emptyWorld
+    s <- snd . fromJust <$> runJailT harness emptyWorld
     seq s $ return ()
 

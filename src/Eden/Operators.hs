@@ -41,8 +41,8 @@ deleteOp (TextObj w b e) = withCurBuffer $ do
       -- TODO(sandy): this won't delete newlines in charwise mode
       Charwise -> do charwiseTowards delChar b
                      delChar
-      Linewise -> do linewiseTowards (proclaims bLines Z.delete) b
-                     proclaim cursorX 0
+      Linewise -> do linewiseTowards (arrests bLines Z.delete) b
+                     arrest cursorX 0
 
 changeOp :: Operator
 changeOp tobj@(TextObj w _ _) = do
@@ -51,4 +51,4 @@ changeOp tobj@(TextObj w _ _) = do
     case w of
       Charwise -> return ()
       Linewise -> openLine $ return ()
-    proclaim wMode INSERT
+    arrest wMode INSERT

@@ -25,14 +25,14 @@ otherDir Backwards = Forwards
 withNextBuffer :: Eden (Maybe Buffer) a -> Eden World a
 withNextBuffer n = do
     next   <- inquire wNextBuffer
-    result <- restrict (wBuffers . at next) n
-    proclaims wNextBuffer (+1)
+    result <- jail (wBuffers . at next) n
+    arrests wNextBuffer (+1)
     return result
 
 maybeWithCurBuffer :: a -> Eden Buffer a -> Eden World a
 maybeWithCurBuffer d n = do
     current <- inquire wCurBuffer
-    restrictInto (wBuffers . at current) d n
+    jailMaybe (wBuffers . at current) d n
 
 unsafeWithCurBuffer :: Eden Buffer a -> Eden World a
 unsafeWithCurBuffer = maybeWithCurBuffer $ error "no current buffer"
@@ -54,7 +54,7 @@ cursorY = bCursor . _2
 cursorChar :: Eden Buffer Char
 cursorChar = do
     x <- inspect cursorX
-    restrict bCurLine $ do
+    jail bCurLine $ do
         (_, right) <- gets $ Y.splitAt x
         case Y.head right of
             Just x ->  return x
@@ -87,23 +87,23 @@ delete x width line = let (left, right) = Y.splitAt x line
 liftRepeat :: Eden World () -> Eden World ()
 liftRepeat action = do
     action
-    proclaim wRepeated action
+    arrest wRepeated action
 
 repeatable :: Repeatable World () -> Eden World ()
 repeatable action = do
     memo <- runAgain action
-    proclaim wRepeated memo
+    arrest wRepeated memo
 
 repeatableMotion :: Again (ReaderT Direction (Eden Buffer)) () -> Eden World ()
 repeatableMotion action = do
     memo <- unsafeWithCurBuffer . flip runReaderT Forwards $ runAgain action
-    proclaim wRepMotion memo
+    arrest wRepMotion memo
 
 appendRepeat :: Repeatable World () -> Eden World ()
 appendRepeat action = do
     memo <- runAgain action
     prev <- inquire wRepeated
-    proclaim wRepeated $ do
+    arrest wRepeated $ do
         prev
         memo
 
