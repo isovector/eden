@@ -11,6 +11,7 @@ module Control.Monad.Jail
     , jail
     , jailMaybe
     , freedom
+    , escape
     , overwrite
     , parole
     , inquire
@@ -109,6 +110,13 @@ jailMaybe l d m =
     (gets $ view l) >>= \case
         Just _  -> jail (l . into) m
         Nothing -> return d
+
+escape :: (Applicative m, Monad m)
+       => JailT s s m a
+       -> JailT s r m a
+escape m = JailT $ \v l s -> do
+    (a, s', _, v') <- runJailT' m v id s
+    return (a, s', l, v')
 
 freedom :: (Applicative m, Monad m) => JailT s r m s
 freedom = JailT $ \v l s -> return (s, s, l, v)
