@@ -5,6 +5,7 @@ module Eden.Motions
     , word
     , toChar
     , findChar
+    , snipe
     , charwiseMotions
     , linewiseMotions
     , motions
@@ -35,6 +36,13 @@ onLine m = do
 
 before :: Direction -> Motion -> Motion
 before d m = m >> moveChar (otherDir d)
+
+findNext :: (Y.YiString -> Bool) -> Direction -> Motion
+findNext p d = do
+    untilM_ (moveChar d) $ do
+        x <- inspect cursorX
+        liftM (p . view (stringRemainder x))
+            $ Z.cursor <$> inspect bLines
 
 -- TODO(sandy): need to make this reversible
 findNextChar :: (Char -> Bool) -> Direction -> Motion
@@ -71,23 +79,29 @@ word = do
 paragraph :: Direction -> Motion
 paragraph = findNextLine Y.null
 
-reversible :: (Direction -> Motion)
-           -> Direction
+reversible :: Direction
+           -> (Direction -> Motion)
            -> ReaderT Direction (Eden Buffer) ()
-reversible m d = ask >>= \case
+reversible d m = ask >>= \case
     Forwards  -> lift $ m d
     Backwards -> lift . m $ otherDir d
 
 toChar :: Direction -> Again (ReaderT Direction (Eden Buffer)) ()
 toChar d = do
     char <- again . liftIO $ getChar
-    lift . flip reversible d $
+    lift . reversible d $
         \d' -> onLine . before d' $ findNextChar (== char) d'
 
 findChar :: Direction -> Again (ReaderT Direction (Eden Buffer)) ()
 findChar d = do
     char <- again . liftIO $ getChar
-    lift . flip reversible d $ onLine . findNextChar (== char)
+    lift . reversible d $ onLine . findNextChar (== char)
+
+snipe :: Direction -> Again (ReaderT Direction (Eden Buffer)) ()
+snipe d = do
+    (c1, c2) <- again . liftIO $ liftM2 (,) getChar getChar
+    let str = Y.cons c1 $ Y.singleton c2
+    lift . reversible d $ try . findNext ((== str) . (Y.take 2))
 
 charwiseMotions :: Map String Motion
 charwiseMotions = M.fromList

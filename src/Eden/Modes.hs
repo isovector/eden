@@ -84,6 +84,8 @@ nnoremap = M.fromList $
     , ('f', repeatableMotion $ findChar Forwards)
     , ('T', repeatableMotion $ toChar Backwards)
     , ('F', repeatableMotion $ findChar Backwards)
+    , ('s', repeatableMotion $ snipe Forwards)
+    , ('S', repeatableMotion $ snipe Backwards)
     , ('.', repeatAction)
     , (';', withCurBuffer $ repeatMotion Forwards)
     , (',', withCurBuffer $ repeatMotion Backwards)

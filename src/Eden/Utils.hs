@@ -1,3 +1,5 @@
+{-# LANGUAGE Rank2Types #-}
+
 module Eden.Utils where
 
 import Eden.Types
@@ -105,3 +107,5 @@ appendRepeat action = do
         prev
         memo
 
+stringRemainder :: Int -> RLens Y.YiString Y.YiString
+stringRemainder x = lens (Y.drop x) (Y.append . Y.take x)
