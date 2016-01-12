@@ -9,6 +9,7 @@ module Eden.Motions
     , charwiseMotions
     , linewiseMotions
     , motions
+    , repeatMotion
     , module Eden.PrimitiveMotions
     ) where
 
@@ -103,6 +104,9 @@ snipe d = do
     let str = Y.cons c1 $ Y.singleton c2
     lift . reversible d $ try . findNext ((== str) . (Y.take 2))
 
+repeatMotion :: Direction -> Eden Buffer ()
+repeatMotion = (inquire wRepMotion >>=) . flip runReaderT
+
 charwiseMotions :: Map String Motion
 charwiseMotions = M.fromList
     [ ("h", arrests cursorX (subtract 1))
@@ -112,6 +116,14 @@ charwiseMotions = M.fromList
     , ("$", jumpEnd)
     , ("{", paragraph Backwards)
     , ("}", paragraph Forwards)
+    , ("t", repeatableMotion $ toChar Forwards)
+    , ("f", repeatableMotion $ findChar Forwards)
+    , ("T", repeatableMotion $ toChar Backwards)
+    , ("F", repeatableMotion $ findChar Backwards)
+    , ("s", repeatableMotion $ snipe Forwards)
+    , ("S", repeatableMotion $ snipe Backwards)
+    , (";", repeatMotion Forwards)
+    , (",", repeatMotion Backwards)
     ]
 
 linewiseMotions :: Map String Motion

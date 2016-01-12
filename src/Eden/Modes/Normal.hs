@@ -3,7 +3,6 @@ module Eden.Modes.Normal
     , delChar
     , joinLine
     , repeatAction
-    , repeatMotion
     ) where
 
 import Eden.Motions
@@ -37,7 +36,4 @@ joinLine = do
 
 repeatAction :: Eden Buffer ()
 repeatAction = join $ inquire wRepeated
-
-repeatMotion :: Direction -> Eden Buffer ()
-repeatMotion = (inquire wRepMotion >>=) . flip runReaderT
 
