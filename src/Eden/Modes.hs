@@ -27,7 +27,7 @@ import qualified Yi.Rope as Y
 modes :: Map Mode (Eden World ())
 modes = M.fromList
     [ (NORMAL, normalMode)
-    , (INSERT, appendRepeat insertMode)
+    , (INSERT, withCurBuffer $ appendRepeat insertMode)
     ]
 
 setMode :: Mode -> Eden World ()
@@ -36,30 +36,27 @@ setMode mode = do
         arrest wRepeated $ return ()
     arrest wMode mode
 
-insertMode :: Repeatable World ()
+insertMode :: Repeatable Buffer ()
 insertMode = do
     char <- again $ liftIO getChar
     lift $ case char of
-      '\x1b' -> setMode NORMAL
-      '\n'   ->
-          withCurBuffer $ do
-              x <- inspect cursorX
-              arrests bLines (lineBreak x)
-              arrests cursorY (+ 1)
-              arrest cursorX 0
-      '\127' -> -- backspace
-          withCurBuffer $ do
-              -- there is a bug here for backspace at 0,0
-              prevChar
-              inspect cursorX >>= \case
+      '\x1b' -> escape $ setMode NORMAL
+      '\n'   -> do
+            x <- inspect cursorX
+            arrests bLines (lineBreak x)
+            arrests cursorY (+ 1)
+            arrest cursorX 0
+      '\127' -> do -- backspace
+            -- there is a bug here for backspace at 0,0
+            prevChar
+            inspect cursorX >>= \case
                 0 -> arrests bLines $ lineJoin Nothing
                 _ -> delChar
       -- 27 is delete
-      _      ->
-          withCurBuffer $ do
-              x <- inspect cursorX
-              arrests bCurLine $ insert x (Y.fromString [char])
-              arrests cursorX (+ 1)
+      _      -> do
+            x <- inspect cursorX
+            arrests bCurLine $ insert x (Y.fromString [char])
+            arrests cursorX (+ 1)
 
 normalMode :: Eden World ()
 normalMode = do
@@ -68,14 +65,14 @@ normalMode = do
        then do
            line <- liftIO getLine
            liftM2 (commands M.!) head tail $ words line
-       else nnoremap M.! result
+       else withCurBuffer $ nnoremap M.! result
 
-nnoremap :: Map Char (Eden World ())
+nnoremap :: Map Char (Eden Buffer ())
 nnoremap = M.fromList $
     [ ('O', liftRepeat . openLine $ return ())
     , ('o', liftRepeat $ openLine down)
-    , ('x', liftRepeat $ withCurBuffer delChar)
-    , ('J', liftRepeat $ withCurBuffer joinLine)
+    , ('x', liftRepeat $ delChar)
+    , ('J', liftRepeat $ joinLine)
     , ('d', repeatable $ operator deleteOp)
     , ('c', repeatable $ operator changeOp)
     , ('D', repeatable $ operateToEnd deleteOp)
@@ -87,14 +84,14 @@ nnoremap = M.fromList $
     , ('s', repeatableMotion $ snipe Forwards)
     , ('S', repeatableMotion $ snipe Backwards)
     , ('.', repeatAction)
-    , (';', withCurBuffer $ repeatMotion Forwards)
-    , (',', withCurBuffer $ repeatMotion Backwards)
-    , ('i', setMode INSERT)
-    , ('\x1b', setMode NORMAL)
+    , (';', repeatMotion Forwards)
+    , (',', repeatMotion Backwards)
+    , ('i', escape $ setMode INSERT)
+    , ('\x1b', escape $ setMode NORMAL)
     ] ++ map toNMap (M.toList motions)
   where
     toNMap (key, motion) = ( head key
-                           , withCurBuffer . try $ motion >> sanitizeCursor)
+                           , try $ motion >> sanitizeCursor)
 
 commands :: Map String ([String] -> Eden World ())
 commands = M.fromList

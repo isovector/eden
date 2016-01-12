@@ -19,12 +19,11 @@ import qualified Data.Map as M
 import qualified Yi.Rope as Y
 
 
-openLine :: Motion -> Eden World ()
+openLine :: Motion -> Eden Buffer ()
 openLine dir = do
-    withCurBuffer $ do
-        dir
-        arrests bLines (Z.insert $ Y.fromString "")
-    arrest wMode INSERT
+    dir
+    arrests bLines (Z.insert $ Y.fromString "")
+    escape $ arrest wMode INSERT
 
 delChar :: Eden Buffer ()
 delChar = do
@@ -36,7 +35,7 @@ joinLine = do
     jumpEnd
     arrests bLines . lineJoin . Just $ Y.fromString " "
 
-repeatAction :: Eden World ()
+repeatAction :: Eden Buffer ()
 repeatAction = join $ inquire wRepeated
 
 repeatMotion :: Direction -> Eden Buffer ()

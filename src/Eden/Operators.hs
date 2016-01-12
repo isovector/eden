@@ -14,27 +14,27 @@ import Control.Monad (when)
 import qualified Data.List.Zipper as Z
 
 
-type Operator = TextObj -> Eden World ()
+type Operator = TextObj -> Eden Buffer ()
 
-operateToEnd :: Operator -> Repeatable World ()
+operateToEnd :: Operator -> Repeatable Buffer ()
 operateToEnd op = do
     runOperator op =<< lift (liftCharwise jumpEnd)
-    lift $ inquire wMode >>= \case
+    lift . escape $ inquire wMode >>= \case
         NORMAL -> withCurBuffer sanitizeCursor
         INSERT -> return ()
 
-runOperator :: Operator -> TextObj -> Repeatable World ()
+runOperator :: Operator -> TextObj -> Repeatable Buffer ()
 runOperator op tobj@(TextObj w b e) = lift $
     when (b /= e) $ op tobj
 
-operator :: Operator -> Repeatable World ()
+operator :: Operator -> Repeatable Buffer ()
 operator op = do
     getTextObj >>= \case
         Just m  -> lift m >>= runOperator op
         Nothing -> return ()
 
 deleteOp :: Operator
-deleteOp (TextObj w b e) = withCurBuffer $ do
+deleteOp (TextObj w b e) = do
     jumpToMark e
     prevChar
     case w of
@@ -51,4 +51,4 @@ changeOp tobj@(TextObj w _ _) = do
     case w of
       Charwise -> return ()
       Linewise -> openLine $ return ()
-    arrest wMode INSERT
+    escape $ arrest wMode INSERT

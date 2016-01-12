@@ -84,26 +84,26 @@ delete :: Int -> Int -> Y.YiString -> Y.YiString
 delete x width line = let (left, right) = Y.splitAt x line
                        in Y.concat [left, Y.drop width right]
 
-liftRepeat :: Eden World () -> Eden World ()
+liftRepeat :: Eden Buffer () -> Eden Buffer ()
 liftRepeat action = do
     action
-    arrest wRepeated action
+    escape $ arrest wRepeated action
 
-repeatable :: Repeatable World () -> Eden World ()
+repeatable :: Repeatable Buffer () -> Eden Buffer ()
 repeatable action = do
     memo <- runAgain action
-    arrest wRepeated memo
+    escape $ arrest wRepeated memo
 
-repeatableMotion :: Again (ReaderT Direction (Eden Buffer)) () -> Eden World ()
+repeatableMotion :: Again (ReaderT Direction (Eden Buffer)) () -> Eden Buffer ()
 repeatableMotion action = do
-    memo <- unsafeWithCurBuffer . flip runReaderT Forwards $ runAgain action
-    arrest wRepMotion memo
+    memo <- flip runReaderT Forwards $ runAgain action
+    escape $ arrest wRepMotion memo
 
-appendRepeat :: Repeatable World () -> Eden World ()
+appendRepeat :: Repeatable Buffer () -> Eden Buffer ()
 appendRepeat action = do
     memo <- runAgain action
     prev <- inquire wRepeated
-    arrest wRepeated $ do
+    escape . arrest wRepeated $ do
         prev
         memo
 

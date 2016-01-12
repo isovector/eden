@@ -14,7 +14,7 @@ import qualified Data.Map as M
 import qualified Yi.Rope as Y
 
 
-textobjs :: Map String (Eden World TextObj)
+textobjs :: Map String (Eden Buffer TextObj)
 textobjs = M.fromList $
     [
     -- ("aw", aWord)
@@ -25,34 +25,32 @@ emptyObj :: TextObj
 emptyObj = let emptyMark = Mark 0 0
             in TextObj Charwise emptyMark emptyMark
 
-liftCharwise :: Motion -> Eden World TextObj
+liftCharwise :: Motion -> Eden Buffer TextObj
 liftCharwise m = do
-    maybeWithCurBuffer emptyObj $ do
-        here <- getMark
-        m
-        there <- getMark
-        jumpToMark here
-        return $ TextObj Charwise (min here there) (max here there)
+    here <- getMark
+    m
+    there <- getMark
+    jumpToMark here
+    return $ TextObj Charwise (min here there) (max here there)
 
-liftLinewise :: Motion -> Eden World TextObj
+liftLinewise :: Motion -> Eden Buffer TextObj
 liftLinewise m = do
-    maybeWithCurBuffer emptyObj $ do
-        here <- getMark
-        m
-        there <- getMark
+    here <- getMark
+    m
+    there <- getMark
 
-        let (first, last) = (min here there, max here there)
-        jumpToMark last
-        lineLen <- Y.length <$> inspect bCurLine
-        jumpToMark here
+    let (first, last) = (min here there, max here there)
+    jumpToMark last
+    lineLen <- Y.length <$> inspect bCurLine
+    jumpToMark here
 
-        -- Extend x positions to be the start and end of lines
-        let first' = set markX 0 first
-            last'  = set markX lineLen last
-        return $ TextObj Linewise first' last'
+    -- Extend x positions to be the start and end of lines
+    let first' = set markX 0 first
+        last'  = set markX lineLen last
+    return $ TextObj Linewise first' last'
 
 
-getTextObj :: Repeatable World (Maybe (Eden World TextObj))
+getTextObj :: Repeatable Buffer (Maybe (Eden Buffer TextObj))
 getTextObj = again $ do
     remaining <- liftIO . newIORef $ M.toList textobjs
     go remaining

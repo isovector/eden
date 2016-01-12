@@ -68,7 +68,7 @@ data Buffer =
     { _bFilename :: FilePath
     , _bCursor   :: CurPos
     , _bLines    :: Zipper Y.YiString
-    }
+    } deriving (Typeable)
 makeLenses ''Buffer
 emptyBuffer = Buffer "[No Name]" (0,0) Z.empty
 
@@ -86,7 +86,7 @@ data World =
     , _wMode    :: Mode
     , _wCurBuffer :: Int
     , _wNextBuffer :: Int
-    , _wRepeated :: JailT World World IO ()
+    , _wRepeated :: JailT World Buffer IO ()
     , _wRepMotion :: ReaderT Direction (JailT World Buffer IO) ()
     } deriving (Typeable)
 makeLenses ''World
